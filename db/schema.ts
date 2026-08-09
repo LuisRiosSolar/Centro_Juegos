@@ -88,6 +88,8 @@ export const cliente = pgTable("cliente", {
 	nombreCompleto: text("nombre_completo")
 		.notNull(),
 
+	edad: integer("edad"),
+
 	fechaNacimiento: timestamp("fecha_nacimiento"),
 
 	responsableId: text("responsable_id")
@@ -150,6 +152,8 @@ export const sesionJuego = pgTable("sesion_juego", {
 
 	estado: estadoSesionEnum("estado")
 		.default("ACTIVA")
+		.notNull(),
+	fechaFinEstimada: timestamp("fecha_fin_estimada")
 		.notNull(),
 
 	creadoPor: text("creado_por")
