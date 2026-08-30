@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Clock, Gamepad2, Phone, UserRound } from "lucide-react";
+import { toast } from "sonner";
 
-import { adjustSessionTime } from "@/app/admin/actions";
+import { adjustSessionTime, finishGameSession } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 export type ActiveSessionCardData = {
 	id: string;
 	fechaIngreso: string;
+	fechaSalida?: string | null;
 	minutosTotales: number;
 	estado: "ACTIVA" | "FINALIZADA" | "CANCELADA";
 	clienteNombre: string;
@@ -28,6 +30,8 @@ type SessionCountdownCardProps = {
 	compact?: boolean;
 };
 
+const adjustmentOptions = [3, 5, 10, 15, 20, 30] as const;
+
 export function SessionCountdownCard({
 	session,
 	canAdjustTime = false,
@@ -43,13 +47,34 @@ export function SessionCountdownCard({
 	const remainingMs = endsAt - now;
 	const elapsedMs = Math.min(totalMs, Math.max(0, now - startedAt));
 	const progress = Math.round((elapsedMs / totalMs) * 100);
-	const isFinished = session.estado !== "ACTIVA" || remainingMs <= 0;
+	const isManuallyFinished = session.estado !== "ACTIVA";
+	const isFinished = isManuallyFinished || remainingMs <= 0;
 	const isAlmostDone = !isFinished && remainingMs <= 10 * 60_000;
 	const [isPending, startTransition] = useTransition();
 
 	function adjustTime(minutes: number) {
+		if (minutes < 0 && session.minutosTotales + minutes < 1) {
+			toast.error("Ajuste de tiempo excede el mínimo permitido.");
+			return;
+		}
+
 		startTransition(async () => {
-			await adjustSessionTime(session.id, minutes);
+			const response = await adjustSessionTime(session.id, minutes);
+
+			if (!response.ok) toast.error(response.message);
+		});
+	}
+
+	function finishSession() {
+		startTransition(async () => {
+			const response = await finishGameSession(session.id);
+
+			if (response.ok) {
+				toast.success(response.message);
+				return;
+			}
+
+			toast.error(response.message);
 		});
 	}
 
@@ -82,18 +107,24 @@ export function SessionCountdownCard({
 										isFinished
 											? "bg-destructive text-destructive-foreground"
 											: isAlmostDone
-												? "bg-amber-500 text-white"
-												: "bg-emerald-500 text-white",
+												? "bg-primary text-primary-foreground"
+												: "bg-secondary text-secondary-foreground",
 									)}
 								>
-									{isFinished
-										? "TIEMPO TERMINADO"
-										: isAlmostDone
-											? "POR TERMINAR"
-											: "ACTIVA"}
+									{isManuallyFinished
+										? session.estado === "FINALIZADA"
+											? "TERMINÓ"
+											: session.estado
+										: isFinished
+											? "TIEMPO TERMINADO"
+											: isAlmostDone
+												? "POR TERMINAR"
+												: "ACTIVA"}
 								</span>
 								<span className="text-xs text-muted-foreground">
-									Inicio: {formatDateTime(session.fechaIngreso)}
+									{isFinished && session.fechaSalida
+										? `Salida: ${formatDateTime(session.fechaSalida)}`
+										: `Inicio: ${formatDateTime(session.fechaIngreso)}`}
 								</span>
 							</div>
 
@@ -128,13 +159,17 @@ export function SessionCountdownCard({
 							<CardContent className={cn("p-5 text-center", compact && "p-3")}>
 								<p className="flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
 									<Clock className="size-4" />
-									Cuenta regresiva
+									{isManuallyFinished ? "Terminó" : "Cuenta regresiva"}
 								</p>
 								<p className="mt-3 font-mono text-4xl font-semibold tracking-tight">
-									{formatRemaining(remainingMs)}
+									{isManuallyFinished
+										? "TERMINÓ"
+										: formatRemaining(remainingMs)}
 								</p>
 								<p className="mt-2 text-xs text-muted-foreground">
-									Termina: {formatTime(endsAt)}
+									{isManuallyFinished && session.fechaSalida
+										? `Salida: ${formatDateTime(session.fechaSalida)}`
+										: `Termina: ${formatTime(endsAt)}`}
 								</p>
 							</CardContent>
 						</Card>
@@ -143,43 +178,36 @@ export function SessionCountdownCard({
 					<div className="space-y-3">
 						<progress
 							className="h-3 w-full"
-							value={Math.min(100, progress)}
+							value={isManuallyFinished ? 100 : Math.min(100, progress)}
 							max={100}
 						/>
 						{canAdjustTime ? (
-							<div className="flex flex-wrap items-center gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									type="button"
+							<div className="grid gap-3 sm:grid-cols-2">
+								<AdjustmentButtons
+									label="Disminuir tiempo"
+									options={adjustmentOptions}
 									disabled={isPending || isFinished}
-									onClick={() => adjustTime(-15)}
-								>
-									-15 min
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									type="button"
+									canUse={(minutes) => session.minutosTotales - minutes >= 1}
+									onAdjust={(minutes) => adjustTime(-minutes)}
+								/>
+								<AdjustmentButtons
+									label={isFinished ? "Reanudar con tiempo" : "Agregar tiempo"}
+									options={adjustmentOptions}
 									disabled={isPending}
-									onClick={() => adjustTime(15)}
-								>
-									+15 min
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									type="button"
-									disabled={isPending}
-									onClick={() => adjustTime(30)}
-								>
-									+30 min
-								</Button>
-								{isFinished ? (
-									<p className="text-xs text-muted-foreground">
-										Solo puedes sumar tiempo para reanudarla.
-									</p>
-								) : null}
+									canUse={() => true}
+									onAdjust={adjustTime}
+								/>
+								<div className="sm:col-span-2">
+									<Button
+										variant="destructive"
+										size="sm"
+										type="button"
+										disabled={isPending || isFinished}
+										onClick={finishSession}
+									>
+										Finalizar sesión
+									</Button>
+								</div>
 							</div>
 						) : null}
 						<div className="grid gap-2 text-center text-sm sm:grid-cols-4">
@@ -195,6 +223,40 @@ export function SessionCountdownCard({
 				</div>
 			</CardContent>
 		</Card>
+	);
+}
+
+function AdjustmentButtons({
+	label,
+	options,
+	disabled,
+	canUse,
+	onAdjust,
+}: {
+	label: string;
+	options: readonly number[];
+	disabled: boolean;
+	canUse: (minutes: number) => boolean;
+	onAdjust: (minutes: number) => void;
+}) {
+	return (
+		<div className="space-y-1.5">
+			<p className="text-xs font-medium text-muted-foreground">{label}</p>
+			<div className="grid grid-cols-3 gap-1.5">
+				{options.map((minutes) => (
+					<Button
+						key={minutes}
+						variant="outline"
+						size="xs"
+						type="button"
+						disabled={disabled || !canUse(minutes)}
+						onClick={() => onAdjust(minutes)}
+					>
+						{minutes} min
+					</Button>
+				))}
+			</div>
+		</div>
 	);
 }
 

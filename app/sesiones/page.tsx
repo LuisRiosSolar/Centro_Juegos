@@ -1,11 +1,18 @@
 import Image from "next/image";
+import Link from "next/link";
+import { LayoutDashboardIcon } from "lucide-react";
 
 import { SessionTvCard } from "@/components/session-tv-card";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getAdminAccess } from "@/lib/admin-auth";
 import { getActiveGameSessions } from "@/lib/game-sessions";
 
 export default async function SessionsPage() {
-	const activeSessions = await getActiveGameSessions();
+	const [activeSessions, adminAccess] = await Promise.all([
+		getActiveGameSessions(),
+		getAdminAccess(),
+	]);
 
 	return (
 		<main className="min-h-svh">
@@ -29,9 +36,17 @@ export default async function SessionsPage() {
 							</h1>
 						</div>
 					</div>
-					<p className="text-6xl font-semibold tabular-nums">
-						{activeSessions.length}
-					</p>
+					<div className="flex items-center gap-3">
+						{adminAccess.ok ? (
+							<Button size="lg" render={<Link href="/admin" />}>
+								<LayoutDashboardIcon />
+								Administrar
+							</Button>
+						) : null}
+						<p className="text-6xl font-semibold tabular-nums">
+							{activeSessions.length}
+						</p>
+					</div>
 				</header>
 
 				{activeSessions.length === 0 ? (

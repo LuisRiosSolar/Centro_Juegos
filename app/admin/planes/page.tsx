@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ClockIcon, WalletCardsIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { AdminCreatePlanDialog } from "@/components/admin-create-plan-dialog";
@@ -50,7 +51,11 @@ export default async function AdminPlansPage() {
 
 	return (
 		<SidebarProvider>
-			<AdminSidebar userName={access.name} active="planes" />
+			<AdminSidebar
+				userName={access.name}
+				userEmail={access.email}
+				active="planes"
+			/>
 			<SidebarInset>
 				<main className="min-h-svh">
 					<div className="flex w-full flex-col gap-5 px-4 py-5 lg:px-6">
@@ -64,27 +69,51 @@ export default async function AdminPlansPage() {
 									<h1 className="text-3xl font-semibold tracking-tight">
 										Planes de tiempo
 									</h1>
+									<p className="mt-1 text-sm text-muted-foreground">
+										{plans.length}{" "}
+										{plans.length === 1
+											? "plan disponible"
+											: "planes disponibles"}
+									</p>
 								</div>
 							</div>
 							<AdminCreatePlanDialog />
 						</header>
 
 						{plans.length === 0 ? (
-							<Card>
+							<Card className="border-dashed">
 								<CardContent className="flex min-h-52 items-center justify-center text-center text-muted-foreground">
-									No hay planes activos todavía.
+									No hay planes activos todavía. Crea el primero para abrir
+									sesiones.
 								</CardContent>
 							</Card>
 						) : (
 							<section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
 								{plans.map((plan) => (
-									<Card key={plan.id}>
-										<CardContent className="p-4">
-											<p className="font-semibold">{plan.nombre}</p>
-											<p className="mt-1 text-sm text-muted-foreground">
-												{plan.minutos} min · $
-												{Number(plan.precio).toLocaleString("es-CO")}
-											</p>
+									<Card
+										key={plan.id}
+										className="border-border/70 transition-shadow hover:shadow-md"
+									>
+										<CardContent className="space-y-4 p-4">
+											<p className="truncate font-semibold">{plan.nombre}</p>
+											<div className="grid grid-cols-2 gap-2 text-sm">
+												<div className="rounded-lg bg-muted/70 p-2.5">
+													<p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+														<ClockIcon className="size-3.5" /> Duración
+													</p>
+													<p className="mt-1 font-semibold">
+														{plan.minutos} min
+													</p>
+												</div>
+												<div className="rounded-lg bg-muted/70 p-2.5">
+													<p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+														<WalletCardsIcon className="size-3.5" /> Precio
+													</p>
+													<p className="mt-1 font-semibold">
+														${Number(plan.precio).toLocaleString("es-CO")}
+													</p>
+												</div>
+											</div>
 										</CardContent>
 									</Card>
 								))}

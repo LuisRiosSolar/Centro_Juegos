@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { PlusIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { createPlan, type ActionResult } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
@@ -27,6 +30,8 @@ import {
 } from "@/lib/session-schemas";
 
 export function AdminCreatePlanDialog() {
+	const router = useRouter();
+	const [open, setOpen] = useState(false);
 	const [result, setResult] = useState<ActionResult | null>(null);
 	const {
 		register,
@@ -54,14 +59,21 @@ export function AdminCreatePlanDialog() {
 		const response = await createPlan(parsed.data);
 		setResult(response);
 
-		if (response.ok) {
-			reset(createPlanDefaults);
+		if (!response.ok) {
+			toast.error(response.message);
+			return;
 		}
+
+		toast.success(response.message);
+		reset(createPlanDefaults);
+		setOpen(false);
+		router.refresh();
 	}
 
 	return (
-		<Dialog>
-			<DialogTrigger render={<Button variant="outline" />}>
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger render={<Button size="lg" />}>
+				<PlusIcon className="size-4" />
 				Nuevo plan
 			</DialogTrigger>
 			<DialogContent>
@@ -104,7 +116,7 @@ export function AdminCreatePlanDialog() {
 							/>
 							<FieldError errors={[errors.precio]} />
 						</Field>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button className="h-11" type="submit" disabled={isSubmitting}>
 							{isSubmitting ? "Creando..." : "Crear plan"}
 						</Button>
 					</FieldGroup>

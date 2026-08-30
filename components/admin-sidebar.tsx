@@ -1,7 +1,26 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { LayoutDashboardIcon, MonitorIcon, TimerIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+	ChevronsUpDownIcon,
+	LayoutDashboardIcon,
+	LogOutIcon,
+	MonitorIcon,
+	TimerIcon,
+	UserRoundIcon,
+} from "lucide-react";
 
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Sidebar,
 	SidebarContent,
@@ -14,17 +33,28 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { authClient } from "@/lib/auth-client";
 
 export function AdminSidebar({
 	userName,
+	userEmail,
 	active,
 }: {
 	userName: string;
+	userEmail: string;
 	active: "panel" | "planes";
 }) {
+	const router = useRouter();
+
+	async function handleSignOut() {
+		await authClient.signOut();
+		router.replace("/login");
+		router.refresh();
+	}
+
 	return (
 		<Sidebar collapsible="icon">
-			<SidebarHeader>
+			<SidebarHeader className="group-data-[collapsible=icon]:hidden">
 				<div className="flex items-center gap-3 px-2 py-2">
 					<Image
 						className="size-10 rounded-xl object-cover"
@@ -43,7 +73,7 @@ export function AdminSidebar({
 				<SidebarGroup>
 					<SidebarGroupLabel>Administración</SidebarGroupLabel>
 					<SidebarGroupContent>
-						<SidebarMenu>
+						<SidebarMenu className="gap-2">
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									render={<Link href="/admin" />}
@@ -72,7 +102,43 @@ export function AdminSidebar({
 					</SidebarGroupContent>
 				</SidebarGroup>
 			</SidebarContent>
-			<SidebarFooter />
+			<SidebarFooter>
+				<SidebarMenu>
+					<SidebarMenuItem>
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<SidebarMenuButton size="lg">
+										<UserRoundIcon />
+										<div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+											<span className="truncate font-medium">{userName}</span>
+											<span className="truncate text-xs text-muted-foreground">
+												{userEmail}
+											</span>
+										</div>
+										<ChevronsUpDownIcon className="ml-auto" />
+									</SidebarMenuButton>
+								}
+							/>
+							<DropdownMenuContent align="start" side="top" className="w-56">
+								<DropdownMenuGroup>
+									<DropdownMenuLabel className="space-y-1 py-2">
+										<p className="truncate text-sm font-medium text-foreground">
+											{userName}
+										</p>
+										<p className="truncate font-normal">{userEmail}</p>
+									</DropdownMenuLabel>
+								</DropdownMenuGroup>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+									<LogOutIcon />
+									Cerrar sesión
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</SidebarMenuItem>
+				</SidebarMenu>
+			</SidebarFooter>
 		</Sidebar>
 	);
 }

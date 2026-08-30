@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CalendarIcon, CheckCircle2Icon } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 
 import { createGameSession, type ActionResult } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,13 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	createSessionDefaults,
 	createSessionSchema,
@@ -93,14 +101,18 @@ export function AdminSessionForm({
 		const response = await createGameSession(parsed.data);
 		setResult(response);
 
-		if (response.ok) {
-			reset({
-				...createSessionDefaults,
-				planTiempoId: plans[0]?.id ?? "",
-				metodoPago: parsed.data.metodoPago,
-			});
-			onCreatedAction?.();
+		if (!response.ok) {
+			toast.error(response.message);
+			return;
 		}
+
+		toast.success(response.message);
+		reset({
+			...createSessionDefaults,
+			planTiempoId: plans[0]?.id ?? "",
+			metodoPago: parsed.data.metodoPago,
+		});
+		onCreatedAction?.();
 	}
 
 	return (
@@ -115,7 +127,7 @@ export function AdminSessionForm({
 			) : null}
 
 			{plans.length === 0 ? (
-				<div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+				<div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
 					Crea al menos un plan de tiempo antes de abrir una sesión.
 				</div>
 			) : null}
@@ -128,46 +140,75 @@ export function AdminSessionForm({
 				>
 					<div className="grid gap-4 md:grid-cols-[1fr_14rem]">
 						<Field data-invalid={!!errors.planTiempoId}>
-							<RequiredLabel>Plan de tiempo</RequiredLabel>
-							<NativeSelect
-								value={selectedPlanId}
-								onChange={(event) =>
-									setValue("planTiempoId", event.target.value, {
+							<RequiredLabel htmlFor="planTiempoId">
+								Plan de tiempo
+							</RequiredLabel>
+							<Select
+								value={selectedPlanId || null}
+								onValueChange={(value) =>
+									setValue("planTiempoId", value ?? "", {
 										shouldValidate: true,
 									})
 								}
 							>
-								<option value="" disabled>
-									Selecciona un plan
-								</option>
-								{plans.map((plan) => (
-									<option key={plan.id} value={plan.id}>
-										{plan.nombre} · {plan.minutos} min · $
-										{Number(plan.precio).toLocaleString("es-CO")}
-									</option>
-								))}
-							</NativeSelect>
+								<SelectTrigger
+									id="planTiempoId"
+									className="h-11 w-full"
+									aria-invalid={!!errors.planTiempoId}
+								>
+									<SelectValue placeholder="Selecciona un plan">
+										{(value) =>
+											plans.find((plan) => plan.id === value)?.nombre ??
+											"Selecciona un plan"
+										}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									{plans.map((plan) => (
+										<SelectItem key={plan.id} value={plan.id}>
+											{plan.nombre} · {plan.minutos} min · ${" "}
+											{Number(plan.precio).toLocaleString("es-CO")}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 							<FieldError errors={[errors.planTiempoId]} />
 						</Field>
 
 						<Field data-invalid={!!errors.metodoPago}>
-							<RequiredLabel>Método de pago</RequiredLabel>
-							<NativeSelect
+							<RequiredLabel htmlFor="metodoPago">Método de pago</RequiredLabel>
+							<Select
 								value={selectedPaymentMethod}
-								onChange={(event) =>
+								onValueChange={(value) => {
+									if (!value) return;
+
 									setValue(
 										"metodoPago",
-										event.target.value as CreateSessionValues["metodoPago"],
+										value as CreateSessionValues["metodoPago"],
 										{ shouldValidate: true },
-									)
-								}
+									);
+								}}
 							>
-								{paymentMethods.map((method) => (
-									<option key={method.value} value={method.value}>
-										{method.label}
-									</option>
-								))}
-							</NativeSelect>
+								<SelectTrigger
+									id="metodoPago"
+									className="h-11 w-full"
+									aria-invalid={!!errors.metodoPago}
+								>
+									<SelectValue placeholder="Selecciona un método">
+										{(value) =>
+											paymentMethods.find((method) => method.value === value)
+												?.label ?? "Selecciona un método"
+										}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									{paymentMethods.map((method) => (
+										<SelectItem key={method.value} value={method.value}>
+											{method.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 							<FieldError errors={[errors.metodoPago]} />
 						</Field>
 					</div>
@@ -341,18 +382,6 @@ function RequiredLabel({
 				*
 			</span>
 		</FieldLabel>
-	);
-}
-
-function NativeSelect({ className, ...props }: React.ComponentProps<"select">) {
-	return (
-		<select
-			className={cn(
-				"h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30",
-				className,
-			)}
-			{...props}
-		/>
 	);
 }
 

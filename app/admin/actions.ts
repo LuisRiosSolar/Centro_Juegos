@@ -118,6 +118,33 @@ export async function createGameSession(
 	return { ok: true, message: "Sesión creada correctamente." };
 }
 
+export async function finishGameSession(
+	sesionJuegoId: string,
+): Promise<ActionResult> {
+	const access = await getAdminAccess();
+	if (!access.ok) return forbiddenResult(access.reason);
+
+	const [session] = await db
+		.select({ id: sesionJuego.id, estado: sesionJuego.estado })
+		.from(sesionJuego)
+		.where(eq(sesionJuego.id, sesionJuegoId))
+		.limit(1);
+
+	if (!session) return { ok: false, message: "Sesión no encontrada." };
+	if (session.estado !== "ACTIVA") {
+		return { ok: false, message: "La sesión ya está terminada." };
+	}
+
+	await db
+		.update(sesionJuego)
+		.set({ estado: "FINALIZADA", fechaSalida: new Date() })
+		.where(eq(sesionJuego.id, session.id));
+
+	revalidateAdminViews();
+
+	return { ok: true, message: "Sesión finalizada correctamente." };
+}
+
 export async function adjustSessionTime(
 	sesionJuegoId: string,
 	minutos: number,
@@ -156,7 +183,14 @@ export async function adjustSessionTime(
 		};
 	}
 
-	const nextMinutes = Math.max(1, session.minutosTotales + minutos);
+	if (minutos < 0 && session.minutosTotales + minutos < 1) {
+		return {
+			ok: false,
+			message: "No puedes disminuir el tiempo por debajo de 1 minuto.",
+		};
+	}
+
+	const nextMinutes = session.minutosTotales + minutos;
 	const appliedDelta = nextMinutes - session.minutosTotales;
 
 	if (appliedDelta === 0) {
