@@ -1,31 +1,33 @@
-import { headers } from "next/headers";
-
-import { auth } from "@/lib/auth";
+import { getCurrentUserAccess } from "@/lib/auth-access";
 
 export type AdminAccess =
-	| { ok: true; userId: string; name: string; email: string; roleName: string }
+	| {
+			ok: true;
+			userId: string;
+			name: string;
+			email: string;
+			roleName: string;
+			isRoot: boolean;
+	  }
 	| { ok: false; reason: "unauthenticated" | "forbidden" };
 
 export async function getAdminAccess(): Promise<AdminAccess> {
-	const session = await auth.api.getSession({
-		headers: await headers(),
-	});
+	const access = await getCurrentUserAccess();
 
-	if (!session?.user) {
-		return { ok: false, reason: "unauthenticated" };
+	if (!access.ok) {
+		return { ok: false, reason: access.reason };
 	}
 
-	const role = session.user.role?.toLowerCase();
-
-	if (role !== "admin" && role !== "superadmin") {
+	if (!access.isAdmin) {
 		return { ok: false, reason: "forbidden" };
 	}
 
 	return {
 		ok: true,
-		userId: session.user.id,
-		name: session.user.name,
-		email: session.user.email,
-		roleName: role,
+		userId: access.userId,
+		name: access.name,
+		email: access.email,
+		roleName: access.role,
+		isRoot: access.isRoot,
 	};
 }

@@ -8,7 +8,11 @@ import { eq } from "drizzle-orm";
 export const auth = betterAuth({
 	database: drizzleAdapter(db, { provider: "pg", schema }),
 	baseURL: process.env.BETTER_AUTH_URL,
-	emailAndPassword: { enabled: true, autoSignIn: false },
+	emailAndPassword: {
+		enabled: true,
+		autoSignIn: false,
+		disableSignUp: true,
+	},
 	plugins: [
 		customSession(async ({ session, user: sessionUser }) => {
 			const [currentUser] = await db
