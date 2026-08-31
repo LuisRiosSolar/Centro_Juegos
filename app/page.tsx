@@ -29,12 +29,6 @@ export default function Home() {
 				<div className="flex flex-col gap-3 sm:flex-row">
 					<Link
 						className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-6 text-sm font-medium text-white shadow-lg shadow-zinc-950/15 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
-						href="/sesiones"
-					>
-						Ir a sesiones
-					</Link>
-					<Link
-						className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white/70 px-6 text-sm font-medium hover:bg-white dark:border-white/10 dark:bg-zinc-900/70 dark:hover:bg-zinc-900"
 						href="/login"
 					>
 						Iniciar sesión

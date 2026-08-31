@@ -80,194 +80,175 @@ export function AdminSessionForm() {
 	}
 
 	return (
-		<Card className="border-white/70 bg-white/90 shadow-xl shadow-amber-950/10 backdrop-blur dark:border-white/10 dark:bg-zinc-950/80">
-			<CardHeader>
-				<CardTitle>Nueva sesión de juego</CardTitle>
-				<CardDescription>
-					Registra responsable, jugador, plan y pago inicial en un solo flujo.
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<form onSubmit={handleSubmit(onSubmit)} noValidate>
-					<FieldGroup className="gap-6">
-						{result ? (
-							<div
-								className={
-									result.ok
-										? "rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200"
-										: "rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200"
-								}
-							>
-								{result.message}
-							</div>
-						) : null}
+		<section className="overflow-hidden rounded-[2rem] border border-[#f0ddc4] bg-[#f6e7cf] p-4 shadow-[0_20px_45px_rgba(137,89,35,0.12)] sm:p-5">
+			<div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+				<div className="flex items-center gap-3">
+					<div className="flex size-12 items-center justify-center rounded-[1.1rem] bg-gradient-to-br from-[#a56ae6] via-[#bb63d8] to-[#f1a4d2] text-xl shadow-lg shadow-violet-500/25">
+						🎮
+					</div>
+					<div>
+						<h3 className="text-2xl font-black tracking-tight text-[#1d1d2f]">
+							Kids Arcade
+						</h3>
+						<p className="text-sm text-[#60617d]">
+							Control de tiempo de juego
+						</p>
+					</div>
+				</div>
 
-						<section className="grid gap-4 md:grid-cols-2">
-							<div className="space-y-1 md:col-span-2">
-								<h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">
-									Responsable
-								</h2>
-								<p className="text-sm text-muted-foreground">
-									Datos de la persona a cargo del jugador.
-								</p>
-							</div>
-							<Field data-invalid={!!errors.responsableIdentificacion}>
-								<FieldLabel htmlFor="responsableIdentificacion">
-									Identificación
-								</FieldLabel>
-								<Input
-									id="responsableIdentificacion"
-									{...register("responsableIdentificacion")}
-								/>
-								<FieldError errors={[errors.responsableIdentificacion]} />
-							</Field>
-							<Field data-invalid={!!errors.responsableNombre}>
-								<FieldLabel htmlFor="responsableNombre">
-									Nombre completo
-								</FieldLabel>
-								<Input
-									id="responsableNombre"
-									{...register("responsableNombre")}
-								/>
-								<FieldError errors={[errors.responsableNombre]} />
-							</Field>
-							<Field data-invalid={!!errors.responsableTelefono}>
-								<FieldLabel htmlFor="responsableTelefono">Teléfono</FieldLabel>
-								<Input
-									id="responsableTelefono"
-									{...register("responsableTelefono")}
-								/>
-								<FieldError errors={[errors.responsableTelefono]} />
-							</Field>
-							<Field data-invalid={!!errors.responsableCorreo}>
-								<FieldLabel htmlFor="responsableCorreo">
-									Correo opcional
-								</FieldLabel>
-								<Input
-									id="responsableCorreo"
-									type="email"
-									{...register("responsableCorreo")}
-								/>
-								<FieldError errors={[errors.responsableCorreo]} />
-							</Field>
-						</section>
+				<div className="flex items-center gap-3 self-start md:self-center">
+					<div className="inline-flex items-center gap-2 rounded-full bg-[#4ec7d4] px-4 py-2 text-sm font-bold text-white shadow-md shadow-cyan-500/20">
+						<span className="inline-flex size-2.5 rounded-full bg-white" />
+						0 JUGANDO
+					</div>
+					<button
+						type="button"
+						className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#7b56f7] to-[#d96ad4] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105"
+					>
+						+ Nuevo ingreso
+					</button>
+				</div>
+			</div>
 
-						<section className="grid gap-4 md:grid-cols-2">
-							<div className="space-y-1 md:col-span-2">
-								<h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">
-									Jugador
-								</h2>
-								<p className="text-sm text-muted-foreground">
-									Datos del cliente que usará la estación de juego.
-								</p>
-							</div>
-							<Field data-invalid={!!errors.clienteIdentificacion}>
-								<FieldLabel htmlFor="clienteIdentificacion">
-									Identificación
-								</FieldLabel>
-								<Input
-									id="clienteIdentificacion"
-									{...register("clienteIdentificacion")}
-								/>
-								<FieldError errors={[errors.clienteIdentificacion]} />
-							</Field>
-							<Field data-invalid={!!errors.clienteNombre}>
-								<FieldLabel htmlFor="clienteNombre">Nombre completo</FieldLabel>
-								<Input id="clienteNombre" {...register("clienteNombre")} />
-								<FieldError errors={[errors.clienteNombre]} />
-							</Field>
-							<Field data-invalid={!!errors.clienteFechaNacimiento}>
-								<FieldLabel htmlFor="clienteFechaNacimiento">
-									Fecha de nacimiento opcional
-								</FieldLabel>
-								<Input
-									id="clienteFechaNacimiento"
-									type="date"
-									{...register("clienteFechaNacimiento")}
-								/>
-								<FieldError errors={[errors.clienteFechaNacimiento]} />
-							</Field>
-							<Field data-invalid={!!errors.clienteObservaciones}>
-								<FieldLabel htmlFor="clienteObservaciones">
-									Observaciones
-								</FieldLabel>
-								<Input
-									id="clienteObservaciones"
-									{...register("clienteObservaciones")}
-								/>
-								<FieldError errors={[errors.clienteObservaciones]} />
-							</Field>
-						</section>
+			<div className="rounded-[1.75rem] border border-white/60 bg-[#f6d8ea] p-4 sm:p-5">
+				<div className="mb-5 flex items-center gap-3">
+					<div className="flex size-10 items-center justify-center rounded-full bg-[#ffa0a0] text-xl shadow-inner shadow-white/70">
+						⏰
+					</div>
+					<h2 className="text-2xl font-black tracking-tight text-[#1f1f31]">
+						¡Tiempo terminado!
+					</h2>
+				</div>
 
-						<section className="grid gap-4 md:grid-cols-4">
-							<div className="space-y-1 md:col-span-4">
-								<h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">
-									Plan y pago
-								</h2>
-							</div>
-							<Field
-								className="md:col-span-2"
-								data-invalid={!!errors.planNombre}
-							>
-								<FieldLabel htmlFor="planNombre">Plan</FieldLabel>
-								<Input id="planNombre" {...register("planNombre")} />
-								<FieldError errors={[errors.planNombre]} />
-							</Field>
-							<Field data-invalid={!!errors.minutos}>
-								<FieldLabel htmlFor="minutos">Minutos</FieldLabel>
-								<Input
-									id="minutos"
-									type="number"
-									min="1"
-									{...register("minutos")}
-								/>
-								<FieldError errors={[errors.minutos]} />
-							</Field>
-							<Field data-invalid={!!errors.precio}>
-								<FieldLabel htmlFor="precio">Valor</FieldLabel>
-								<Input
-									id="precio"
-									type="number"
-									min="0"
-									step="100"
-									{...register("precio")}
-								/>
-								<FieldError errors={[errors.precio]} />
-							</Field>
-							<Field
-								className="md:col-span-2"
-								data-invalid={!!errors.metodoPago}
-							>
-								<FieldLabel htmlFor="metodoPago">Método de pago</FieldLabel>
-								<select
-									id="metodoPago"
-									className="h-10 rounded-xl border border-input bg-white px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-zinc-900/80"
-									{...register("metodoPago")}
-								>
-									{paymentMethods.map((method) => (
-										<option key={method.value} value={method.value}>
-											{method.label}
-										</option>
-									))}
-								</select>
-								<FieldError errors={[errors.metodoPago]} />
-							</Field>
-							<Field className="justify-end md:col-span-2">
-								<Button
-									className="h-10 rounded-xl"
-									type="submit"
-									disabled={isSubmitting}
-								>
-									{isSubmitting ? "Creando sesión..." : "Crear sesión"}
-								</Button>
-								<FieldDescription>
-									La sesión queda activa inmediatamente.
-								</FieldDescription>
-							</Field>
-						</section>
-					</FieldGroup>
+				<form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+					{result ? (
+						<div
+							className={
+								result.ok
+									? "rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+									: "rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
+							}
+						>
+							{result.message}
+						</div>
+					) : null}
+
+					<div className="grid gap-4 md:grid-cols-2">
+						<Field data-invalid={!!errors.clienteNombre} className="md:col-span-2">
+							<FieldLabel htmlFor="clienteNombre" className="text-[#2d2d3b]">
+								Nombre del jugador
+							</FieldLabel>
+							<Input
+								id="clienteNombre"
+								placeholder="Ej: pepito"
+								className="h-12 rounded-2xl border-0 bg-white/80 text-base shadow-inner shadow-zinc-200/80 focus-visible:ring-2 focus-visible:ring-violet-500"
+								{...register("clienteNombre")}
+							/>
+							<FieldError errors={[errors.clienteNombre]} />
+						</Field>
+
+						<Field data-invalid={!!errors.clienteIdentificacion}>
+							<FieldLabel htmlFor="clienteIdentificacion" className="text-[#2d2d3b]">
+								Identificación
+							</FieldLabel>
+							<Input
+								id="clienteIdentificacion"
+								placeholder="Ej: 1002345678"
+								className="h-12 rounded-2xl border-0 bg-white/80 text-base shadow-inner shadow-zinc-200/80 focus-visible:ring-2 focus-visible:ring-violet-500"
+								{...register("clienteIdentificacion")}
+							/>
+							<FieldError errors={[errors.clienteIdentificacion]} />
+						</Field>
+
+						<Field data-invalid={!!errors.clienteFechaNacimiento}>
+							<FieldLabel htmlFor="clienteFechaNacimiento" className="text-[#2d2d3b]">
+								Edad / fecha
+							</FieldLabel>
+							<Input
+								id="clienteFechaNacimiento"
+								type="date"
+								className="h-12 rounded-2xl border-0 bg-white/80 text-base shadow-inner shadow-zinc-200/80 focus-visible:ring-2 focus-visible:ring-violet-500"
+								{...register("clienteFechaNacimiento")}
+							/>
+							<FieldError errors={[errors.clienteFechaNacimiento]} />
+						</Field>
+					</div>
+
+					<div className="grid gap-4 md:grid-cols-3">
+						<Field data-invalid={!!errors.planNombre} className="md:col-span-2">
+							<FieldLabel htmlFor="planNombre" className="text-[#2d2d3b]">
+								Plan
+							</FieldLabel>
+							<Input
+								id="planNombre"
+								placeholder="Hora de juego"
+								className="h-12 rounded-2xl border-0 bg-white/80 text-base shadow-inner shadow-zinc-200/80 focus-visible:ring-2 focus-visible:ring-violet-500"
+								{...register("planNombre")}
+							/>
+							<FieldError errors={[errors.planNombre]} />
+						</Field>
+
+						<Field data-invalid={!!errors.minutos}>
+							<FieldLabel htmlFor="minutos" className="text-[#2d2d3b]">
+								Tiempo
+							</FieldLabel>
+							<Input
+								id="minutos"
+								type="number"
+								min="1"
+								className="h-12 rounded-2xl border-0 bg-white/80 text-base shadow-inner shadow-zinc-200/80 focus-visible:ring-2 focus-visible:ring-violet-500"
+								{...register("minutos")}
+							/>
+							<FieldError errors={[errors.minutos]} />
+						</Field>
+					</div>
+
+					<div className="grid gap-4 md:grid-cols-2">
+						<Field data-invalid={!!errors.responsableNombre}>
+							<FieldLabel htmlFor="responsableNombre" className="text-[#2d2d3b]">
+								Responsable
+							</FieldLabel>
+							<Input
+								id="responsableNombre"
+								placeholder="Nombre del acudiente"
+								className="h-12 rounded-2xl border-0 bg-white/80 text-base shadow-inner shadow-zinc-200/80 focus-visible:ring-2 focus-visible:ring-violet-500"
+								{...register("responsableNombre")}
+							/>
+							<FieldError errors={[errors.responsableNombre]} />
+						</Field>
+
+						<Field data-invalid={!!errors.responsableTelefono}>
+							<FieldLabel htmlFor="responsableTelefono" className="text-[#2d2d3b]">
+								Teléfono
+							</FieldLabel>
+							<Input
+								id="responsableTelefono"
+								placeholder="Ej: 3200000000"
+								className="h-12 rounded-2xl border-0 bg-white/80 text-base shadow-inner shadow-zinc-200/80 focus-visible:ring-2 focus-visible:ring-violet-500"
+								{...register("responsableTelefono")}
+							/>
+							<FieldError errors={[errors.responsableTelefono]} />
+						</Field>
+					</div>
+
+					<div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+						<Button
+							type="button"
+							variant="outline"
+							className="h-12 rounded-full border-white/80 bg-white/60 px-5 text-sm font-semibold text-[#2d2d3b] hover:bg-white/80"
+						>
+							Cancelar
+						</Button>
+						<Button
+							type="submit"
+							disabled={isSubmitting}
+							className="h-12 rounded-full bg-gradient-to-r from-[#4cc7d5] via-[#4eb8de] to-[#7a57f6] px-6 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 hover:brightness-105"
+						>
+							{isSubmitting ? "Guardando..." : "Guardar ingreso"}
+						</Button>
+					</div>
 				</form>
-			</CardContent>
-		</Card>
+			</div>
+		</section>
 	);
 }

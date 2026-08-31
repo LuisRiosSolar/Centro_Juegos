@@ -3,20 +3,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminSessionForm } from "@/components/admin-session-form";
+import { AdminUserForm } from "@/components/admin-user-form";
 import { SessionCountdownCard } from "@/components/session-countdown-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { db } from "@/db";
-import {
-	cliente,
-	planTiempo,
-	responsable,
-	sesionJuego,
-	user,
-} from "@/db/schema";
+import { UserProfileMenu } from "@/components/user-profile-menu";
 import { getAdminAccess } from "@/lib/admin-auth";
-import { desc, eq } from "drizzle-orm";
+import { getActiveSessionsOverview } from "@/lib/session-queries";
 
-export default async function AdminPage() {
+export async function AdminDashboard() {
 	const access = await getAdminAccess();
 
 	if (!access.ok && access.reason === "unauthenticated") {
@@ -48,60 +42,48 @@ export default async function AdminPage() {
 		);
 	}
 
-	const activeSessions = (
-		await db
-			.select({
-				id: sesionJuego.id,
-				fechaIngreso: sesionJuego.fechaIngreso,
-				minutosTotales: sesionJuego.minutosTotales,
-				clienteNombre: cliente.nombreCompleto,
-				clienteIdentificacion: cliente.identificacion,
-				responsableNombre: responsable.nombreCompleto,
-				responsableTelefono: responsable.telefono,
-				planNombre: planTiempo.nombre,
-				precio: planTiempo.precio,
-				creadoPor: user.name,
-			})
-			.from(sesionJuego)
-			.innerJoin(cliente, eq(sesionJuego.clienteId, cliente.id))
-			.innerJoin(responsable, eq(cliente.responsableId, responsable.id))
-			.innerJoin(planTiempo, eq(sesionJuego.planTiempoId, planTiempo.id))
-			.innerJoin(user, eq(sesionJuego.creadoPor, user.id))
-			.where(eq(sesionJuego.estado, "ACTIVA"))
-			.orderBy(desc(sesionJuego.fechaIngreso))
-	).map((session) => ({
+	const activeSessions = (await getActiveSessionsOverview()).map((session) => ({
 		...session,
 		fechaIngreso: session.fechaIngreso.toISOString(),
-		precio: session.precio.toString(),
 	}));
 
 	return (
-		<main className="min-h-svh bg-[#fff8ed] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
-			<div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8">
-				<header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-xl shadow-amber-950/10 backdrop-blur dark:border-white/10 dark:bg-zinc-950/70 md:flex-row md:items-center md:justify-between">
-					<div className="flex items-center gap-4">
-						<Image
-							className="size-16 rounded-2xl object-cover shadow-lg"
-							src="/logo.jpg"
-							alt="Logo de El Rincón de José"
-							width={96}
-							height={96}
-							priority
-						/>
-						<div>
-							<p className="text-sm uppercase tracking-[0.3em] text-amber-700 dark:text-amber-300">
+		<main className="min-h-svh bg-[radial-gradient(circle_at_top,_rgba(247,216,158,0.45),_transparent_28%),linear-gradient(180deg,#f7f1e7_0%,#f3eae5_100%)] px-4 py-6 text-zinc-950 md:px-6 dark:bg-zinc-950 dark:text-zinc-50">
+			<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+				<header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-[0_12px_30px_rgba(84,58,31,0.08)] backdrop-blur-md md:flex-row md:items-center md:justify-between">
+					<div className="flex min-w-0 flex-1 items-center gap-4">
+						<div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7a56f7] via-[#c36be4] to-[#f5b2d5] shadow-lg shadow-violet-500/20">
+							<Image
+								className="size-10 rounded-xl object-cover"
+								src="/logo.jpg"
+								alt="Logo de El Rincón de José"
+								width={40}
+								height={40}
+								priority
+							/>
+						</div>
+						<div className="min-w-0">
+							<p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-700 dark:text-amber-300">
 								Panel admin
 							</p>
-							<h1 className="text-3xl font-semibold tracking-tight">
+							<h1 className="truncate text-2xl font-black tracking-tight md:text-3xl">
 								El Rincón de José
 							</h1>
-							<p className="text-sm text-muted-foreground">
+							<p className="text-sm text-zinc-600">
 								Hola, {access.name}
 							</p>
 						</div>
 					</div>
-					<div className="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-						{activeSessions.length} sesiones activas
+					<div className="flex flex-wrap items-center justify-end gap-3">
+						<div className="inline-flex items-center gap-2 rounded-full bg-[#f4d89d] px-4 py-2 text-sm font-bold text-[#4e3c13] shadow-sm">
+							<span className="inline-flex size-2 rounded-full bg-[#5cc5d3]" />
+							{activeSessions.length} sesiones activas
+						</div>
+						<UserProfileMenu
+							name={access.name}
+							email={access.email}
+							role={access.role}
+						/>
 					</div>
 				</header>
 
@@ -109,37 +91,45 @@ export default async function AdminPage() {
 					<SummaryCard
 						label="Sesiones activas"
 						value={activeSessions.length.toString()}
+						accent="amber"
 					/>
 					<SummaryCard
 						label="Minutos vendidos"
 						value={activeSessions
 							.reduce((total, session) => total + session.minutosTotales, 0)
 							.toString()}
+						accent="violet"
 					/>
 					<SummaryCard
 						label="Caja activa"
 						value={`$${activeSessions
 							.reduce((total, session) => total + Number(session.precio), 0)
 							.toLocaleString("es-CO")}`}
+						accent="cyan"
 					/>
 				</section>
 
-				<div className="grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
-					<AdminSessionForm />
+				<div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+					<div className="space-y-6">
+						<AdminSessionForm />
+						{access.isRoot ? <AdminUserForm /> : null}
+					</div>
 
 					<section className="space-y-4">
-						<div className="rounded-[1.5rem] border border-white/70 bg-white/70 p-5 shadow-lg shadow-amber-950/5 backdrop-blur dark:border-white/10 dark:bg-zinc-950/60">
-							<h2 className="text-2xl font-semibold tracking-tight">
-								Sesiones actuales
-							</h2>
-							<p className="text-sm text-muted-foreground">
-								Cuenta regresiva en vivo para cada jugador activo.
-							</p>
+						<div className="flex items-center justify-between rounded-[1.6rem] border border-white/70 bg-white/70 p-4 shadow-[0_10px_25px_rgba(80,62,34,0.05)] backdrop-blur-sm">
+							<div>
+								<h2 className="text-2xl font-black tracking-tight text-zinc-900">
+									Sesiones actuales
+								</h2>
+							</div>
+							<div className="rounded-full bg-[#dffaf7] px-3 py-1.5 text-xs font-bold text-[#1d5f67]">
+								{activeSessions.length} en curso
+							</div>
 						</div>
 
 						{activeSessions.length === 0 ? (
-							<Card className="border-dashed border-white/70 bg-white/70 dark:border-white/10 dark:bg-zinc-950/70">
-								<CardContent className="flex min-h-52 items-center justify-center text-center text-muted-foreground">
+							<Card className="border-dashed border-white/70 bg-white/55 shadow-[0_8px_20px_rgba(80,62,34,0.04)] dark:border-white/10 dark:bg-zinc-950/70">
+								<CardContent className="flex min-h-48 items-center justify-center text-center text-muted-foreground">
 									No hay sesiones activas todavía.
 								</CardContent>
 							</Card>
@@ -157,12 +147,30 @@ export default async function AdminPage() {
 	);
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
+export default async function AdminPage() {
+	return <AdminDashboard />;
+}
+
+function SummaryCard({
+	label,
+	value,
+	accent,
+}: {
+	label: string;
+	value: string;
+	accent: "amber" | "violet" | "cyan";
+}) {
+	const palette = {
+		amber: "bg-[#f6e7c6] text-[#3b2b10]",
+		violet: "bg-[#eae0ff] text-[#34265d]",
+		cyan: "bg-[#dffaf7] text-[#144a56]",
+	};
+
 	return (
-		<Card className="border-white/70 bg-white/85 shadow-lg shadow-amber-950/5 backdrop-blur dark:border-white/10 dark:bg-zinc-950/70">
+		<Card className={`border-white/70 ${palette[accent]} shadow-[0_10px_22px_rgba(72,52,24,0.06)] backdrop-blur dark:border-white/10 dark:bg-zinc-950/70`}>
 			<CardContent className="p-5">
-				<p className="text-sm text-muted-foreground">{label}</p>
-				<p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
+				<p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{label}</p>
+				<p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
 			</CardContent>
 		</Card>
 	);

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -96,14 +95,13 @@ export function LoginForm({
 					</div>
 					<div className="space-y-2">
 						<p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-700 dark:text-amber-300">
-							Bienvenido
+							Acceso administrativo
 						</p>
 						<CardTitle className="text-3xl font-semibold tracking-tight">
-							Entrar a El Rincón de José
+							El Rincón de José
 						</CardTitle>
 						<CardDescription className="text-balance text-base">
-							Continúa a tu cuenta para descubrir juegos, partidas y nuevos
-							retos.
+							Gestiona registros, tiempos y pagos del centro de juegos.
 						</CardDescription>
 					</div>
 				</CardHeader>
@@ -116,12 +114,12 @@ export function LoginForm({
 								</div>
 							) : null}
 							<Field data-invalid={!!errors.email}>
-								<FieldLabel htmlFor="email">Correo</FieldLabel>
+								<FieldLabel htmlFor="email">Correo Electronico</FieldLabel>
 								<Input
 									className="h-11 rounded-xl bg-white/80 dark:bg-zinc-900/80"
 									id="email"
 									type="email"
-									placeholder="jose@example.com"
+									placeholder="pepitoperez@example.com"
 									autoComplete="email"
 									aria-invalid={!!errors.email}
 									{...register("email")}
@@ -149,14 +147,8 @@ export function LoginForm({
 								>
 									{isSubmitting ? "Entrando..." : "Entrar"}
 								</Button>
-								<FieldDescription className="text-center">
-									¿No tienes una cuenta?{" "}
-									<Link
-										className="font-medium text-amber-700 hover:text-amber-800 dark:text-amber-300"
-										href="/register"
-									>
-										Regístrate
-									</Link>
+								<FieldDescription className="text-center text-sm text-muted-foreground">
+									🔒 Acceso exclusivo para personal autorizado.
 								</FieldDescription>
 							</Field>
 						</FieldGroup>
