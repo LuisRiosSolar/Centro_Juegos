@@ -8,6 +8,7 @@ import {
 	LayoutDashboardIcon,
 	LogOutIcon,
 	MonitorIcon,
+	PaletteIcon,
 	ReceiptTextIcon,
 	TimerIcon,
 	UserRoundIcon,
@@ -46,7 +47,7 @@ export function AdminSidebar({
 	userName: string;
 	userEmail: string;
 	isRoot?: boolean;
-	active: "panel" | "planes" | "usuarios" | "reportes";
+	active: "panel" | "planes" | "usuarios" | "reportes" | "personalizacion";
 }) {
 	const router = useRouter();
 
@@ -120,6 +121,15 @@ export function AdminSidebar({
 										>
 											<UsersIcon />
 											<span>Usuarios</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link href="/personalizacion" />}
+											isActive={active === "personalizacion"}
+										>
+											<PaletteIcon />
+											<span>Personalización</span>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
 								</>
