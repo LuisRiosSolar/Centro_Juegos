@@ -8,8 +8,10 @@ import {
 	LayoutDashboardIcon,
 	LogOutIcon,
 	MonitorIcon,
+	ReceiptTextIcon,
 	TimerIcon,
 	UserRoundIcon,
+	UsersIcon,
 } from "lucide-react";
 
 import {
@@ -38,11 +40,13 @@ import { authClient } from "@/lib/auth-client";
 export function AdminSidebar({
 	userName,
 	userEmail,
+	isRoot = false,
 	active,
 }: {
 	userName: string;
 	userEmail: string;
-	active: "panel" | "planes";
+	isRoot?: boolean;
+	active: "panel" | "planes" | "usuarios" | "reportes";
 }) {
 	const router = useRouter();
 
@@ -80,24 +84,46 @@ export function AdminSidebar({
 									isActive={active === "panel"}
 								>
 									<LayoutDashboardIcon />
-									<span>Panel</span>
+									<span>Inicio</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton render={<Link href="/sesiones" />}>
 									<MonitorIcon />
-									<span>Sesiones</span>
+									<span>Sesiones activas</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton
-									render={<Link href="/admin/planes" />}
-									isActive={active === "planes"}
-								>
-									<TimerIcon />
-									<span>Planes</span>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
+							{isRoot ? (
+								<>
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link href="/admin/reportes" />}
+											isActive={active === "reportes"}
+										>
+											<ReceiptTextIcon />
+											<span>Reporte de sesiones</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link href="/admin/planes" />}
+											isActive={active === "planes"}
+										>
+											<TimerIcon />
+											<span>Planes</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link href="/admin/usuarios" />}
+											isActive={active === "usuarios"}
+										>
+											<UsersIcon />
+											<span>Usuarios</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								</>
+							) : null}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>

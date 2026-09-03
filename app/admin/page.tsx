@@ -65,6 +65,7 @@ export default async function AdminPage() {
 			<AdminSidebar
 				userName={access.name}
 				userEmail={access.email}
+				isRoot={access.isRoot}
 				active="panel"
 			/>
 			<SidebarInset>
@@ -113,7 +114,13 @@ export default async function AdminPage() {
 	);
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
+function SummaryCard({
+	label,
+	value,
+}: {
+	label: string;
+	value: string;
+}) {
 	return (
 		<Card className="border-border/70 shadow-none">
 			<CardContent className="flex min-w-0 items-baseline justify-between gap-2 px-3 py-2.5">

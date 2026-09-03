@@ -11,7 +11,6 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		autoSignIn: false,
-		disableSignUp: true,
 	},
 	plugins: [
 		customSession(async ({ session, user: sessionUser }) => {

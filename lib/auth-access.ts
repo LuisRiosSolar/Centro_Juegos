@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
 
-export type AppRole = "user" | "admin" | "superadmin";
+export type AppRole = "admin" | "superadmin";
 
 export type CurrentUserAccess =
 	| {
@@ -19,11 +19,11 @@ export type CurrentUserAccess =
 export function normalizeRole(role?: string | null): AppRole {
 	const normalized = role?.trim().toLowerCase();
 
-	if (normalized === "admin" || normalized === "superadmin") {
-		return normalized;
+	if (normalized === "superadmin") {
+		return "superadmin";
 	}
 
-	return "user";
+	return "admin";
 }
 
 export function isAdminRole(role?: string | null): boolean {
@@ -48,7 +48,7 @@ export async function getCurrentUserAccess(): Promise<CurrentUserAccess> {
 		name: session.user.name,
 		email: session.user.email,
 		role,
-		isAdmin: isAdminRole(role),
+		isAdmin: true,
 		isRoot: role === "superadmin",
 	};
 }

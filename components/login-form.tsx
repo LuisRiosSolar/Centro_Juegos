@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -67,7 +66,7 @@ export function LoginForm({
 		const { error } = await authClient.signIn.email({
 			email: parsed.data.email,
 			password: parsed.data.password,
-			callbackURL: "/sesiones",
+			callbackURL: "/",
 		});
 
 		if (error) {
@@ -75,7 +74,7 @@ export function LoginForm({
 			return;
 		}
 
-		router.push("/sesiones");
+		router.push("/");
 		router.refresh();
 	}
 
@@ -95,8 +94,8 @@ export function LoginForm({
 						/>
 					</div>
 					<div className="space-y-2">
-						<p className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">
-							Bienvenido
+						<p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-700 dark:text-amber-300">
+							Acceso administrativo
 						</p>
 						<CardTitle className="text-3xl font-semibold tracking-tight">
 							Entrar a El Rincón de José
@@ -149,14 +148,8 @@ export function LoginForm({
 								>
 									{isSubmitting ? "Entrando..." : "Entrar"}
 								</Button>
-								<FieldDescription className="text-center">
-									¿No tienes una cuenta?{" "}
-									<Link
-										className="font-medium text-primary hover:text-primary/80"
-										href="/register"
-									>
-										Regístrate
-									</Link>
+								<FieldDescription className="text-center text-sm text-muted-foreground">
+									🔒 Acceso exclusivo para personal autorizado.
 								</FieldDescription>
 							</Field>
 						</FieldGroup>

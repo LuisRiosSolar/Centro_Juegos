@@ -1,7 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+import { getCurrentUserAccess } from "@/lib/auth-access";
+
+export default async function Home() {
+	const access = await getCurrentUserAccess();
+
+	if (access.ok) {
+		redirect(access.isRoot || access.isAdmin ? "/admin" : "/sesiones");
+	}
+
 	return (
 		<main className="relative flex min-h-svh overflow-hidden bg-background text-foreground">
 			<section className="relative mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-8 px-6 py-16 text-center">
