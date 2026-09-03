@@ -109,6 +109,7 @@ export default async function AdminFinancialReportPage({
 								initialSummary={summary}
 								initialStartDate={startDate}
 								initialEndDate={endDate}
+								isRoot={access.isRoot}
 							/>
 						</div>
 					</div>
