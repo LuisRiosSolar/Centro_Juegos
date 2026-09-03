@@ -8,6 +8,7 @@ import {
 	LayoutDashboardIcon,
 	LogOutIcon,
 	MonitorIcon,
+	ReceiptTextIcon,
 	TimerIcon,
 	UserRoundIcon,
 	UsersIcon,
@@ -45,7 +46,7 @@ export function AdminSidebar({
 	userName: string;
 	userEmail: string;
 	isRoot?: boolean;
-	active: "panel" | "planes" | "usuarios";
+	active: "panel" | "planes" | "usuarios" | "reportes";
 }) {
 	const router = useRouter();
 
@@ -83,34 +84,45 @@ export function AdminSidebar({
 									isActive={active === "panel"}
 								>
 									<LayoutDashboardIcon />
-									<span>Panel</span>
+									<span>Inicio</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton render={<Link href="/sesiones" />}>
 									<MonitorIcon />
-									<span>Sesiones</span>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton
-									render={<Link href="/admin/planes" />}
-									isActive={active === "planes"}
-								>
-									<TimerIcon />
-									<span>Planes</span>
+									<span>Sesiones activas</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							{isRoot ? (
-								<SidebarMenuItem>
-									<SidebarMenuButton
-										render={<Link href="/admin/usuarios" />}
-										isActive={active === "usuarios"}
-									>
-										<UsersIcon />
-										<span>Usuarios</span>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
+								<>
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link href="/admin/reportes" />}
+											isActive={active === "reportes"}
+										>
+											<ReceiptTextIcon />
+											<span>Reporte de sesiones</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link href="/admin/planes" />}
+											isActive={active === "planes"}
+										>
+											<TimerIcon />
+											<span>Planes</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link href="/admin/usuarios" />}
+											isActive={active === "usuarios"}
+										>
+											<UsersIcon />
+											<span>Usuarios</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								</>
 							) : null}
 						</SidebarMenu>
 					</SidebarGroupContent>

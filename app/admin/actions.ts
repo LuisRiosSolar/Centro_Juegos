@@ -394,11 +394,28 @@ export async function adjustSessionTime(
 		.set(updateValues)
 		.where(eq(sesionJuego.id, session.id));
 
+	// Fetch plan details to calculate proportional extra charge
+	const [sessionPlan] = await db
+		.select({
+			precio: planTiempo.precio,
+			minutos: planTiempo.minutos,
+		})
+		.from(sesionJuego)
+		.leftJoin(planTiempo, eq(sesionJuego.planTiempoId, planTiempo.id))
+		.where(eq(sesionJuego.id, session.id))
+		.limit(1);
+
+	const planPrice = sessionPlan?.precio ? Number(sessionPlan.precio) : 0;
+	const planMinutes = sessionPlan?.minutos && sessionPlan.minutos > 0 ? sessionPlan.minutos : 60;
+	const calculatedExtraValue = appliedDelta > 0
+		? Math.round((planPrice / planMinutes) * appliedDelta)
+		: 0;
+
 	await db.insert(extensionTiempo).values({
 		id: crypto.randomUUID(),
 		sesionJuegoId: session.id,
 		minutosAgregados: appliedDelta,
-		valor: "0",
+		valor: calculatedExtraValue.toString(),
 		creadoPor: access.userId,
 	});
 
@@ -426,6 +443,7 @@ function revalidateAdminViews() {
 	revalidatePath("/admin");
 	revalidatePath("/admin/planes");
 	revalidatePath("/admin/usuarios");
+	revalidatePath("/admin/reportes");
 	revalidatePath("/sesiones");
 }
 
