@@ -12,7 +12,7 @@ COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     npm install --no-audit --no-fund
 
-# Build the application.
+# Build the application without requiring production environment variables.
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
