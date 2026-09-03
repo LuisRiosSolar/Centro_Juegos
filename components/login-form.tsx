@@ -5,25 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	Field,
-	FieldDescription,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { loginSchema, type LoginFormValues } from "@/lib/auth-schemas";
 import { cn } from "@/lib/utils";
+
 
 export function LoginForm({
 	className,
@@ -80,12 +65,23 @@ export function LoginForm({
 
 	return (
 		<div className={cn("flex flex-col", className)} {...props}>
-			<Card className="overflow-hidden border-border bg-card/85 shadow-2xl backdrop-blur-xl">
-				<CardHeader className="items-center gap-4 px-8 pt-8 text-center">
+			{/* Card oscura con gradiente de marca — fondo de página es blanco */}
+			<div
+				className="overflow-hidden rounded-2xl backdrop-blur-2xl"
+				style={{
+					background: "linear-gradient(150deg, #0d0a1e 0%, #1a0835 40%, #0e1f3d 80%, #071428 100%)",
+					boxShadow: "0 32px_80px_rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.10)",
+				}}
+			>
+				{/* Header */}
+				<div className="flex flex-col items-center gap-4 px-8 pt-8 text-center">
 					<div className="relative mx-auto flex justify-center">
-						<div className="absolute inset-0 rounded-3xl bg-primary/30 blur-xl" />
+						<div
+							className="absolute inset-0 rounded-3xl blur-2xl"
+							style={{ background: "rgba(255,107,0,0.50)" }}
+						/>
 						<Image
-							className="relative mx-auto size-20 rounded-3xl border border-border object-cover shadow-lg"
+							className="relative mx-auto size-20 rounded-3xl border border-white/20 object-cover shadow-2xl"
 							src="/logo.jpg"
 							alt="Logo de El Rincón de José"
 							width={96}
@@ -93,68 +89,132 @@ export function LoginForm({
 							priority
 						/>
 					</div>
-					<div className="space-y-2">
-						<p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-700 dark:text-amber-300">
+					<div className="space-y-1.5">
+						<p
+							className="text-xs font-semibold uppercase tracking-[0.35em]"
+							style={{ color: "#FF6B00" }}
+						>
 							Acceso administrativo
 						</p>
-						<CardTitle className="text-3xl font-semibold tracking-tight">
+						<h1 className="text-3xl font-semibold tracking-tight text-white">
 							El Rincón de José
-						</CardTitle>
-						<CardDescription className="text-balance text-base">
+						</h1>
+						<p className="text-balance text-base" style={{ color: "rgba(255,255,255,0.55)" }}>
 							Gestiona registros, tiempos y pagos del centro de juegos.
-						</CardDescription>
+						</p>
 					</div>
-				</CardHeader>
-				<CardContent className="px-8 pb-8">
+				</div>
+
+				{/* Form */}
+				<div className="px-8 pb-8 pt-6">
 					<form onSubmit={handleSubmit(onSubmit)} noValidate>
-						<FieldGroup className="gap-4">
+						<div className="flex flex-col gap-4">
 							{formError ? (
-								<div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3">
-									<FieldError>{formError}</FieldError>
+								<div className="rounded-xl border px-4 py-3" style={{ borderColor: "rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)" }}>
+									<p className="text-sm font-medium" style={{ color: "#fca5a5" }}>{formError}</p>
 								</div>
 							) : null}
-							<Field data-invalid={!!errors.email}>
-								<FieldLabel htmlFor="email">Correo</FieldLabel>
-								<Input
-									className="h-11 rounded-xl bg-background/80"
+
+							{/* Campo correo */}
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="email"
+									className="text-sm font-medium"
+									style={{ color: "rgba(255,255,255,0.80)" }}
+								>
+									Correo
+								</label>
+								<input
 									id="email"
 									type="email"
 									placeholder="jose@example.com"
 									autoComplete="email"
 									aria-invalid={!!errors.email}
 									{...register("email")}
+									className="h-11 w-full rounded-xl px-3.5 text-sm outline-none transition"
+									style={{
+										background: "rgba(255,255,255,0.08)",
+										border: errors.email ? "1px solid rgba(239,68,68,0.7)" : "1px solid rgba(255,255,255,0.18)",
+										color: "#ffffff",
+										...(errors.email ? { boxShadow: "0 0 0 2px rgba(239,68,68,0.25)" } : {}),
+									}}
+									onFocus={(e) => {
+										e.currentTarget.style.boxShadow = "0 0 0 2px rgba(255,107,0,0.45)";
+										e.currentTarget.style.borderColor = "#FF6B00";
+									}}
+									onBlur={(e) => {
+										if (!errors.email) {
+											e.currentTarget.style.boxShadow = "";
+											e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
+										}
+									}}
 								/>
-								<FieldError errors={[errors.email]} />
-							</Field>
-							<Field data-invalid={!!errors.password}>
-								<FieldLabel htmlFor="password">Contraseña</FieldLabel>
-								<Input
-									className="h-11 rounded-xl bg-background/80"
+								{errors.email && (
+									<p className="text-xs text-red-500">{errors.email.message}</p>
+								)}
+							</div>
+
+							{/* Campo contraseña */}
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="password"
+									className="text-sm font-medium"
+									style={{ color: "rgba(255,255,255,0.80)" }}
+								>
+									Contraseña
+								</label>
+								<input
 									id="password"
 									type="password"
 									placeholder="••••••••"
 									autoComplete="current-password"
 									aria-invalid={!!errors.password}
 									{...register("password")}
+									className="h-11 w-full rounded-xl px-3.5 text-sm outline-none transition"
+									style={{
+										background: "rgba(255,255,255,0.08)",
+										border: errors.password ? "1px solid rgba(239,68,68,0.7)" : "1px solid rgba(255,255,255,0.18)",
+										color: "#ffffff",
+										...(errors.password ? { boxShadow: "0 0 0 2px rgba(239,68,68,0.25)" } : {}),
+									}}
+									onFocus={(e) => {
+										e.currentTarget.style.boxShadow = "0 0 0 2px rgba(255,107,0,0.45)";
+										e.currentTarget.style.borderColor = "#FF6B00";
+									}}
+									onBlur={(e) => {
+										if (!errors.password) {
+											e.currentTarget.style.boxShadow = "";
+											e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
+										}
+									}}
 								/>
-								<FieldError errors={[errors.password]} />
-							</Field>
-							<Field className="gap-4 pt-2">
-								<Button
-									className="h-11 w-full rounded-xl shadow-lg"
+								{errors.password && (
+									<p className="text-xs text-red-500">{errors.password.message}</p>
+								)}
+							</div>
+
+							{/* Botón */}
+							<div className="flex flex-col gap-3 pt-1">
+								<button
 									type="submit"
 									disabled={isSubmitting}
+									className="h-11 w-full rounded-xl font-semibold text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+									style={{
+										background: "linear-gradient(135deg, #FF6B00 0%, #ff8c38 100%)",
+										boxShadow: "0 4px 20px rgba(255,107,0,0.45)",
+									}}
 								>
 									{isSubmitting ? "Entrando..." : "Entrar"}
-								</Button>
-								<FieldDescription className="text-center text-sm text-muted-foreground">
+								</button>
+								<p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>
 									🔒 Acceso exclusivo para personal autorizado.
-								</FieldDescription>
-							</Field>
-						</FieldGroup>
+								</p>
+							</div>
+						</div>
 					</form>
-				</CardContent>
-			</Card>
+				</div>
+			</div>
 		</div>
 	);
 }
+

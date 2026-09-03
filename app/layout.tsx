@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrandThemeProvider } from "@/components/brand-theme-provider";
 
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
@@ -36,8 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 						enableSystem
 						disableTransitionOnChange
 					>
-						{children}
-						<Toaster position="top-right" richColors />
+						<BrandThemeProvider>
+							{children}
+							<Toaster position="top-right" richColors />
+						</BrandThemeProvider>
 					</ThemeProvider>
 				</TooltipProvider>
 			</body>

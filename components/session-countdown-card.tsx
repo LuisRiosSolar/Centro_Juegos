@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Clock, Gamepad2, Phone, PlusCircleIcon, UserRound } from "lucide-react";
+import { Clock, Phone, PlusCircleIcon, UserRound, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { adjustSessionTime, finishGameSession } from "@/app/admin/actions";
@@ -31,15 +31,43 @@ type SessionCountdownCardProps = {
 	compact?: boolean;
 };
 
+// ─── Heurística de género por nombre ──────────────────────────────────────────
+const FEMALE_NAMES = new Set([
+	"isabel", "maria", "sofia", "valentina", "sara", "paula", "camila", "daniela", "alejandra",
+	"andrea", "ana", "laura", "natalia", "gabriela", "carolina", "diana", "lucia", "juliana",
+	"manuela", "monica", "paola", "angela", "vanessa", "jessica", "fernanda", "tatiana",
+	"veronica", "stephania", "xiomara", "yesenia", "leidy", "luz", "rosa", "esperanza",
+	"martha", "gloria", "adriana", "mariana", "pilar", "claudia", "patricia", "lorena",
+	"viviana", "beatriz", "carmen", "olga", "susana", "nubia", "liliana", "blanca", "elsa",
+	"norma", "alba", "salome", "valeria", "guadalupe", "antonella", "luciana", "samanta",
+	"emilia", "dulce", "mia", "emma", "zoe", "isabella", "victoria", "rebecca", "martina"
+]);
+
+const MALE_NAMES = new Set([
+	"juan", "jose", "carlos", "luis", "miguel", "andres", "santiago", "sebastian", "nicolas",
+	"alejandro", "david", "daniel", "jorge", "pablo", "antonio", "francisco", "rafael",
+	"gabriel", "sergio", "ivan", "mario", "hector", "oscar", "edgar", "julian", "camilo",
+	"christian", "john", "steven", "kevin", "bryan", "wilmar", "wilson", "henry", "cesar",
+	"manuel", "roberto", "javier", "pedro", "eduardo", "alberto", "fernando", "diego",
+	"rodrigo", "mauricio", "fabio", "nelson", "omar", "gustavo", "alvaro", "hernan",
+	"ernesto", "felipe", "jaime", "simon", "tomas", "matias", "samuel", "emiliano",
+	"joaquin", "maximiliano", "ian", "thiago", "dylan", "mateo", "lucas", "martin", "santino"
+]);
+
+export function detectGender(name: string): "boy" | "girl" {
+	const normalized = (name || "").trim().toLowerCase().split(/\s+/)[0];
+	if (FEMALE_NAMES.has(normalized)) return "girl";
+	if (MALE_NAMES.has(normalized)) return "boy";
+	if (["a", "ia", "na", "ela", "ita", "ina", "era", "isa", "osa"].some((e) => normalized.endsWith(e))) {
+		return "girl";
+	}
+	return "boy";
+}
+
 export function getPlanDynamicOptions(planMinutos: number = 30): number[] {
 	const base = Math.max(1, planMinutos);
 	const half = Math.max(1, Math.round(base * 0.5));
-	return [
-		half, // 0.5x (ej. 5, 8, 10, 15, 30)
-		base, // 1x   (ej. 10, 15, 20, 30, 60)
-		base * 2, // 2x (ej. 20, 30, 40, 60, 120)
-		base * 3, // 3x (ej. 30, 45, 60, 90, 180)
-	];
+	return [half, base, base * 2, base * 3];
 }
 
 export function SessionCountdownCard({
@@ -61,6 +89,8 @@ export function SessionCountdownCard({
 	const isFinished = isManuallyFinished || remainingMs <= 0;
 	const isAlmostDone = !isFinished && remainingMs <= 10 * 60_000;
 	const [isPending, startTransition] = useTransition();
+
+	const gender = detectGender(session.clienteNombre);
 
 	const planMinutes =
 		session.planMinutos && session.planMinutos > 0
@@ -99,34 +129,36 @@ export function SessionCountdownCard({
 
 	useEffect(() => {
 		const interval = window.setInterval(() => setNow(Date.now()), 1000);
-
 		return () => window.clearInterval(interval);
 	}, []);
 
 	return (
 		<Card
 			className={cn(
-				"h-full border-border/70 bg-card transition-all",
+				"h-full border-border/80 bg-card/95 transition-all shadow-sm hover:shadow-md",
 				isFinished && "border-destructive/40 bg-destructive/5 opacity-85",
+				isAlmostDone && "border-primary/50 shadow-primary/5"
 			)}
 		>
-			<CardContent className={cn("p-5", compact && "p-4")}>
-				<div className={cn("flex flex-col gap-5", compact && "gap-3")}>
+			<CardContent className={cn("p-4 sm:p-5", compact && "p-3 sm:p-4")}>
+				<div className={cn("flex flex-col gap-4", compact && "gap-3")}>
+					{/* ── Header: Estado + Info Jugador + Contador ── */}
 					<div
 						className={cn(
-							"flex flex-col gap-4 md:flex-row md:items-start md:justify-between",
+							"flex flex-col gap-3 md:flex-row md:items-start md:justify-between",
 							compact && "md:flex-col",
 						)}
 					>
-						<div className={cn("space-y-3", compact && "space-y-2")}>
+						<div className="space-y-2.5 flex-1 min-w-0">
+							{/* Badges de estado */}
 							<div className="flex flex-wrap items-center gap-2">
 								<span
 									className={cn(
-										"rounded-full px-3 py-1 text-xs font-semibold",
+										"rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide",
 										isFinished
 											? "bg-destructive text-destructive-foreground"
 											: isAlmostDone
-												? "bg-primary text-primary-foreground"
+												? "bg-primary text-primary-foreground animate-pulse"
 												: "bg-secondary text-secondary-foreground",
 									)}
 								>
@@ -140,82 +172,135 @@ export function SessionCountdownCard({
 												? "POR TERMINAR"
 												: "ACTIVA"}
 								</span>
-								<span className="text-xs text-muted-foreground">
+								<span className="text-[11px] text-muted-foreground font-medium">
 									{isFinished && session.fechaSalida
 										? `Salida: ${formatDateTime(session.fechaSalida)}`
 										: `Inicio: ${formatDateTime(session.fechaIngreso)}`}
 								</span>
 							</div>
 
-							<div>
-								<h3
-									className={cn(
-										"flex items-center gap-2 font-semibold tracking-tight",
-										compact ? "text-xl" : "text-2xl",
-									)}
+							{/* Nombre del niño/niña con ícono visual */}
+							<div className="flex items-center gap-3">
+								<div
+									className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-inner"
+									style={{
+										background: isFinished
+											? "rgba(239, 68, 68, 0.15)"
+											: gender === "girl"
+												? "linear-gradient(135deg, rgba(255, 61, 154, 0.2), rgba(255, 61, 154, 0.08))"
+												: "linear-gradient(135deg, rgba(var(--primary) / 0.2), rgba(var(--primary) / 0.08))",
+										border: isFinished
+											? "1px solid rgba(239, 68, 68, 0.3)"
+											: gender === "girl"
+												? "1px solid rgba(255, 61, 154, 0.3)"
+												: "1px solid rgba(var(--primary) / 0.3)",
+									}}
 								>
-									<Gamepad2 className="size-5 text-primary" />
-									{session.clienteNombre}
-								</h3>
-								<p className="mt-1 text-xs text-muted-foreground">
-									ID {session.clienteIdentificacion}
-								</p>
+									{isFinished ? "⏱️" : gender === "girl" ? "👧" : "👦"}
+								</div>
+								<div className="min-w-0">
+									<h3
+										className={cn(
+											"truncate font-extrabold tracking-tight text-foreground",
+											compact ? "text-lg" : "text-xl",
+										)}
+									>
+										{session.clienteNombre}
+									</h3>
+									<p className="text-xs text-muted-foreground">
+										ID: {session.clienteIdentificacion}
+									</p>
+								</div>
 							</div>
 
-							<div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-								<p className="flex items-center gap-2">
-									<UserRound className="size-3.5" />
-									{session.responsableNombre}
-								</p>
-								<p className="flex items-center gap-2">
-									<Phone className="size-3.5" />
-									{session.responsableTelefono}
-								</p>
+							{/* Datos del Acudiente / Responsable (visible en el inicio admin) */}
+							<div className="flex flex-wrap gap-2 pt-0.5">
+								<div className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
+									<UserRound className="size-3.5 text-primary shrink-0" />
+									<span className="truncate max-w-[130px] font-medium text-foreground">
+										{session.responsableNombre}
+									</span>
+								</div>
+								<div className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
+									<Phone className="size-3.5 text-primary shrink-0" />
+									<span className="font-medium text-foreground">
+										{session.responsableTelefono}
+									</span>
+								</div>
 							</div>
 						</div>
 
-						<Card size="sm" className={cn(!compact && "md:min-w-56", "border-border/60 shadow-xs")}>
-							<CardContent className={cn("p-4 text-center", compact && "p-3")}>
-								<p className="flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-									<Clock className="size-3.5" />
-									{isManuallyFinished ? "Terminó" : "Cuenta regresiva"}
-								</p>
-								<p className="mt-2 font-mono text-3xl font-bold tracking-tight tabular-nums text-foreground">
-									{isManuallyFinished
-										? "TERMINÓ"
-										: formatRemaining(remainingMs)}
-								</p>
-								<p className="mt-1 text-xs text-muted-foreground">
-									{isManuallyFinished && session.fechaSalida
-										? `Salida: ${formatDateTime(session.fechaSalida)}`
-										: `Termina: ${formatTime(endsAt)}`}
-								</p>
-							</CardContent>
-						</Card>
+						{/* Caja de Contador / Cuenta Regresiva */}
+						<div
+							className={cn(
+								"shrink-0 rounded-2xl border p-3 text-center transition-all",
+								!compact && "md:min-w-[190px]",
+								isFinished
+									? "border-destructive/30 bg-destructive/10"
+									: isAlmostDone
+										? "border-primary/40 bg-primary/10 shadow-sm shadow-primary/10"
+										: "border-border/80 bg-muted/20"
+							)}
+						>
+							<p className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+								<Clock className="size-3 text-primary" />
+								{isManuallyFinished ? "Terminó" : "Tiempo restante"}
+							</p>
+							<p
+								className={cn(
+									"mt-1 font-mono text-2xl sm:text-3xl font-black tracking-tight tabular-nums",
+									isFinished
+										? "text-destructive"
+										: isAlmostDone
+											? "text-primary"
+											: "text-foreground"
+								)}
+							>
+								{isManuallyFinished
+									? "00:00:00"
+									: formatRemaining(remainingMs)}
+							</p>
+							<p className="mt-0.5 text-[11px] text-muted-foreground font-medium">
+								{isManuallyFinished && session.fechaSalida
+									? `Salida: ${formatDateTime(session.fechaSalida)}`
+									: `Termina: ${formatTime(endsAt)}`}
+							</p>
+						</div>
 					</div>
 
-					<div className="space-y-4">
-						<progress
-							className="h-2.5 w-full rounded-full overflow-hidden"
-							value={isManuallyFinished ? 100 : Math.min(100, progress)}
-							max={100}
-						/>
+					{/* ── Barra de Progreso ── */}
+					<div className="space-y-3">
+						<div className="h-2.5 w-full overflow-hidden rounded-full bg-muted/60 border border-border/40">
+							<div
+								className={cn(
+									"h-full rounded-full transition-all duration-500",
+									isFinished
+										? "bg-destructive"
+										: isAlmostDone
+											? "bg-primary"
+											: "bg-emerald-500"
+								)}
+								style={{
+									width: `${isManuallyFinished ? 100 : Math.min(100, Math.max(0, progress))}%`,
+								}}
+							/>
+						</div>
 
+						{/* ── Acciones para Administrador (Agregar tiempo / Finalizar) ── */}
 						{canAdjustTime ? (
-							<div className="space-y-3 pt-1">
-								{/* Dynamic Add Time Section */}
-								<div className="space-y-2">
+							<div className="space-y-2.5 pt-0.5">
+								<div className="space-y-1.5">
 									<div className="flex items-center justify-between">
-										<p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+										<p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
 											<PlusCircleIcon className="size-3.5 text-primary" />
 											{isFinished ? "Reanudar con tiempo extra" : "Agregar tiempo"}
 										</p>
 										<span className="text-[11px] text-muted-foreground">
-											Tarifa {session.planNombre} ({planMinutes} min)
+											{session.planNombre} ({planMinutes} min)
 										</span>
 									</div>
 
-									<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+									<div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
 										{dynamicAddOptions.map((minutes) => {
 											const cost = Math.round(
 												(planPrice / planMinutes) * minutes,
@@ -228,12 +313,12 @@ export function SessionCountdownCard({
 													type="button"
 													disabled={isPending}
 													onClick={() => adjustTime(minutes)}
-													className="flex h-auto flex-col items-center justify-center gap-0.5 py-2 px-2 border-border/80 hover:border-primary/60 hover:bg-primary/5 transition-all shadow-xs"
+													className="flex h-auto flex-col items-center justify-center gap-0.5 py-1.5 px-1 border-border/80 hover:border-primary/60 hover:bg-primary/5 transition-all"
 												>
-													<span className="font-bold text-xs sm:text-sm text-foreground">
+													<span className="font-bold text-xs text-foreground">
 														+{minutes} min
 													</span>
-													<span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+													<span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
 														+${cost.toLocaleString("es-CO")}
 													</span>
 												</Button>
@@ -242,13 +327,14 @@ export function SessionCountdownCard({
 									</div>
 								</div>
 
-								<div>
+								<div className="flex justify-end pt-1">
 									<Button
 										variant="destructive"
 										size="sm"
 										type="button"
 										disabled={isPending || isFinished}
 										onClick={finishSession}
+										className="h-8 text-xs font-semibold px-3"
 									>
 										Finalizar sesión
 									</Button>
@@ -256,7 +342,8 @@ export function SessionCountdownCard({
 							</div>
 						) : null}
 
-						<div className="grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-4">
+						{/* Métricas base */}
+						<div className="grid grid-cols-2 gap-1.5 text-center text-xs sm:grid-cols-4 pt-1">
 							<Metric label="Plan" value={session.planNombre} />
 							<Metric label="Tiempo total" value={`${session.minutosTotales} min`} />
 							<Metric
@@ -274,9 +361,9 @@ export function SessionCountdownCard({
 
 function Metric({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="rounded-xl border border-border/60 bg-muted/40 p-2">
-			<p className="text-[11px] text-muted-foreground">{label}</p>
-			<p className="mt-0.5 font-bold text-foreground truncate">{value}</p>
+		<div className="rounded-xl border border-border/60 bg-muted/30 p-1.5 sm:p-2">
+			<p className="text-[10px] sm:text-[11px] text-muted-foreground">{label}</p>
+			<p className="mt-0.5 font-bold text-foreground truncate text-xs sm:text-sm">{value}</p>
 		</div>
 	);
 }
