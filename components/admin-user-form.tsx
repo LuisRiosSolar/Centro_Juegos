@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { UserPlusIcon } from "lucide-react";
 
-import { createManagedUser, type CreateManagedUserValues } from "@/app/admin/actions";
+import {
+	createManagedUser,
+	type CreateManagedUserValues,
+} from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -22,7 +26,10 @@ import {
 import { Input } from "@/components/ui/input";
 
 export function AdminUserForm() {
-	const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+	const [status, setStatus] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
 
 	const {
 		register,
@@ -52,13 +59,17 @@ export function AdminUserForm() {
 	}
 
 	return (
-		<Card className="border-white/70 bg-white/85 shadow-xl shadow-amber-950/5 backdrop-blur dark:border-white/10 dark:bg-zinc-950/70">
-			<CardHeader className="space-y-2">
-				<CardTitle className="text-2xl font-semibold tracking-tight">
-					Crear usuario
-				</CardTitle>
+		<Card className="border-border/70 shadow-sm">
+			<CardHeader className="space-y-1">
+				<div className="flex items-center gap-2">
+					<UserPlusIcon className="size-5 text-primary" />
+					<CardTitle className="text-xl font-semibold tracking-tight">
+						Crear nuevo usuario
+					</CardTitle>
+				</div>
 				<CardDescription>
-					Solo el superadmin puede crear credenciales para nuevos empleados.
+					Solo el super administrador puede crear credenciales de acceso para nuevos
+					empleados.
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -68,8 +79,8 @@ export function AdminUserForm() {
 							<div
 								className={
 									status.type === "success"
-										? "rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200"
-										: "rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200"
+										? "rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
+										: "rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
 								}
 							>
 								{status.message}
@@ -77,11 +88,12 @@ export function AdminUserForm() {
 						) : null}
 
 						<Field data-invalid={!!errors.name}>
-							<FieldLabel htmlFor="name">Nombre</FieldLabel>
+							<FieldLabel htmlFor="name">Nombre completo</FieldLabel>
 							<Input
 								id="name"
 								type="text"
 								placeholder="Ana Gómez"
+								autoComplete="name"
 								aria-invalid={!!errors.name}
 								{...register("name")}
 							/>
@@ -89,7 +101,7 @@ export function AdminUserForm() {
 						</Field>
 
 						<Field data-invalid={!!errors.email}>
-							<FieldLabel htmlFor="email">Correo</FieldLabel>
+							<FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
 							<Input
 								id="email"
 								type="email"
@@ -115,26 +127,26 @@ export function AdminUserForm() {
 						</Field>
 
 						<Field data-invalid={!!errors.role}>
-							<FieldLabel htmlFor="role">Rol</FieldLabel>
+							<FieldLabel htmlFor="role">Rol en el sistema</FieldLabel>
 							<select
 								id="role"
-								className="h-11 w-full rounded-xl border border-input bg-white/80 px-3 text-sm text-zinc-900 dark:bg-zinc-900/80 dark:text-zinc-50"
+								className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 								{...register("role")}
 							>
-								<option value="user">Usuario</option>
+								<option value="user">Operador / Usuario</option>
 								<option value="admin">Administrador</option>
 							</select>
 							<FieldError errors={[errors.role]} />
 						</Field>
 
-						<FieldDescription className="text-sm text-muted-foreground">
-							La contraseña queda protegida y solo está disponible para ese usuario.
+						<FieldDescription className="text-xs text-muted-foreground">
+							La contraseña es cifrada y protegida por Better Auth.
 						</FieldDescription>
 
 						<Button
 							type="submit"
 							disabled={isSubmitting}
-							className="w-full rounded-xl bg-zinc-950 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+							className="mt-2 w-full"
 						>
 							{isSubmitting ? "Creando usuario..." : "Crear usuario"}
 						</Button>

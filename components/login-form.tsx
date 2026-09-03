@@ -80,12 +80,12 @@ export function LoginForm({
 
 	return (
 		<div className={cn("flex flex-col", className)} {...props}>
-			<Card className="overflow-hidden border-white/60 bg-white/85 shadow-2xl shadow-amber-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/80">
+			<Card className="overflow-hidden border-border bg-card/85 shadow-2xl backdrop-blur-xl">
 				<CardHeader className="items-center gap-4 px-8 pt-8 text-center">
 					<div className="relative mx-auto flex justify-center">
-						<div className="absolute inset-0 rounded-3xl bg-amber-400/30 blur-xl" />
+						<div className="absolute inset-0 rounded-3xl bg-primary/30 blur-xl" />
 						<Image
-							className="relative mx-auto size-20 rounded-3xl border border-white/80 object-cover shadow-lg shadow-amber-900/20"
+							className="relative mx-auto size-20 rounded-3xl border border-border object-cover shadow-lg"
 							src="/logo.jpg"
 							alt="Logo de El Rincón de José"
 							width={96}
@@ -109,14 +109,14 @@ export function LoginForm({
 					<form onSubmit={handleSubmit(onSubmit)} noValidate>
 						<FieldGroup className="gap-4">
 							{formError ? (
-								<div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/60 dark:bg-red-950/30">
+								<div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3">
 									<FieldError>{formError}</FieldError>
 								</div>
 							) : null}
 							<Field data-invalid={!!errors.email}>
 								<FieldLabel htmlFor="email">Correo Electronico</FieldLabel>
 								<Input
-									className="h-11 rounded-xl bg-white/80 dark:bg-zinc-900/80"
+									className="h-11 rounded-xl bg-background/80"
 									id="email"
 									type="email"
 									placeholder="pepitoperez@example.com"
@@ -129,7 +129,7 @@ export function LoginForm({
 							<Field data-invalid={!!errors.password}>
 								<FieldLabel htmlFor="password">Contraseña</FieldLabel>
 								<Input
-									className="h-11 rounded-xl bg-white/80 dark:bg-zinc-900/80"
+									className="h-11 rounded-xl bg-background/80"
 									id="password"
 									type="password"
 									placeholder="••••••••"
@@ -141,7 +141,7 @@ export function LoginForm({
 							</Field>
 							<Field className="gap-4 pt-2">
 								<Button
-									className="h-11 w-full rounded-xl bg-zinc-950 text-white shadow-lg shadow-zinc-950/15 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+									className="h-11 w-full rounded-xl shadow-lg"
 									type="submit"
 									disabled={isSubmitting}
 								>

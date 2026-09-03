@@ -16,7 +16,12 @@ export const createSessionSchema = z.object({
 	clienteNombre: requiredText("Ingresa el nombre del jugador"),
 	clienteFechaNacimiento: z.string(),
 	clienteObservaciones: z.string(),
-	planNombre: requiredText("Ingresa el nombre del plan"),
+	planTiempoId: requiredText("Selecciona un plan"),
+	metodoPago: z.enum(["EFECTIVO", "TRANSFERENCIA", "NEQUI", "DAVIPLATA"]),
+});
+
+export const createPlanSchema = z.object({
+	nombre: requiredText("Ingresa el nombre del plan"),
 	minutos: z.coerce
 		.number("Ingresa los minutos")
 		.int("Los minutos deben ser un número entero")
@@ -24,10 +29,10 @@ export const createSessionSchema = z.object({
 	precio: z.coerce
 		.number("Ingresa el valor")
 		.min(0, "El valor no puede ser negativo"),
-	metodoPago: z.enum(["EFECTIVO", "TRANSFERENCIA", "NEQUI", "DAVIPLATA"]),
 });
 
 export type CreateSessionValues = z.infer<typeof createSessionSchema>;
+export type CreatePlanValues = z.infer<typeof createPlanSchema>;
 
 export const createSessionDefaults: CreateSessionValues = {
 	responsableIdentificacion: "",
@@ -38,8 +43,12 @@ export const createSessionDefaults: CreateSessionValues = {
 	clienteNombre: "",
 	clienteFechaNacimiento: "",
 	clienteObservaciones: "",
-	planNombre: "Hora de juego",
+	planTiempoId: "",
+	metodoPago: "EFECTIVO",
+};
+
+export const createPlanDefaults: CreatePlanValues = {
+	nombre: "",
 	minutos: 60,
 	precio: 0,
-	metodoPago: "EFECTIVO",
 };
