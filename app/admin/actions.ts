@@ -127,7 +127,9 @@ export async function createManagedUser(
 		};
 	} catch (error) {
 		const errorMsg =
-			error instanceof Error ? error.message : "Error inesperado al crear usuario";
+			error instanceof Error
+				? error.message
+				: "Error inesperado al crear usuario";
 		return {
 			ok: false,
 			message: errorMsg,
@@ -221,10 +223,7 @@ export async function togglePlanStatus(
 		};
 	}
 
-	await db
-		.update(planTiempo)
-		.set({ activo })
-		.where(eq(planTiempo.id, planId));
+	await db.update(planTiempo).set({ activo }).where(eq(planTiempo.id, planId));
 
 	revalidateAdminViews();
 	return {
@@ -381,11 +380,11 @@ export async function adjustSessionTime(
 
 	const updateValues = isFinished
 		? {
-			fechaIngreso: new Date(now.getTime() - session.minutosTotales * 60_000),
-			fechaSalida: null,
-			minutosTotales: nextMinutes,
-			estado: "ACTIVA" as const,
-		}
+				fechaIngreso: new Date(now.getTime() - session.minutosTotales * 60_000),
+				fechaSalida: null,
+				minutosTotales: nextMinutes,
+				estado: "ACTIVA" as const,
+			}
 		: { minutosTotales: nextMinutes };
 
 	await db
@@ -405,10 +404,10 @@ export async function adjustSessionTime(
 		.limit(1);
 
 	const planPrice = sessionPlan?.precio ? Number(sessionPlan.precio) : 0;
-	const planMinutes = sessionPlan?.minutos && sessionPlan.minutos > 0 ? sessionPlan.minutos : 60;
-	const calculatedExtraValue = appliedDelta > 0
-		? Math.round((planPrice / planMinutes) * appliedDelta)
-		: 0;
+	const planMinutes =
+		sessionPlan?.minutos && sessionPlan.minutos > 0 ? sessionPlan.minutos : 60;
+	const calculatedExtraValue =
+		appliedDelta > 0 ? Math.round((planPrice / planMinutes) * appliedDelta) : 0;
 
 	await db.insert(extensionTiempo).values({
 		id: crypto.randomUUID(),
