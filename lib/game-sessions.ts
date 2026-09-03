@@ -293,29 +293,21 @@ export async function getSessionFinancialReport(
 	const sessions: FinancialReportItem[] = sessionRows.map((s) => {
 		const sessionPayments = paymentsBySession.get(s.id) ?? [];
 		const sessionExtensions = extensionsBySession.get(s.id) ?? [];
-
-		// Initial base session value from payment or plan
 		const initialPayment = sessionPayments[0];
-		const valorSesion = initialPayment
-			? Number(initialPayment.valor)
-			: Number(s.planPrecio);
+		const planPrice = Number(s.planPrecio);
+		const planMinutes = s.planMinutos > 0 ? s.planMinutos : 60;
+		const valorSesion = planPrice || (initialPayment ? Number(initialPayment.valor) : 0);
 
 		const metodoPago = (initialPayment?.metodoPago ?? "EFECTIVO") as keyof typeof desgloseMetodosPago;
 
-		// Extensions calculations
+		// Extensions calculations reflecting plan rates
 		let valorAdicional = 0;
 		let tiempoAdicionalMinutos = 0;
 
-		const planPrice = Number(s.planPrecio);
-		const planMinutes = s.planMinutos > 0 ? s.planMinutos : 60;
-
 		const adiciones = sessionExtensions.map((ext) => {
 			let extVal = Number(ext.valor);
-			if (extVal === 0 && ext.minutosAgregados > 0) {
-				extVal = Math.round((planPrice / planMinutes) * ext.minutosAgregados);
-			}
-
 			if (ext.minutosAgregados > 0) {
+				extVal = Math.round((planPrice / planMinutes) * ext.minutosAgregados);
 				valorAdicional += extVal;
 				tiempoAdicionalMinutos += ext.minutosAgregados;
 			}

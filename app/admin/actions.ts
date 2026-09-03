@@ -424,6 +424,25 @@ function forbiddenResult(
 	};
 }
 
+export async function syncAccountingData(): Promise<ActionResult> {
+	const access = await getAdminAccess();
+	if (!access.ok) return forbiddenResult(access.reason);
+
+	if (!access.isRoot) {
+		return {
+			ok: false,
+			message: "Solo el super administrador puede actualizar la contabilidad.",
+		};
+	}
+
+	revalidateAdminViews();
+
+	return {
+		ok: true,
+		message: "Actualización Exitosa",
+	};
+}
+
 function revalidateAdminViews() {
 	revalidatePath("/admin");
 	revalidatePath("/admin/planes");
