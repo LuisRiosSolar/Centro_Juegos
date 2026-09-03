@@ -98,11 +98,10 @@ export function LoginForm({
 							Acceso administrativo
 						</p>
 						<CardTitle className="text-3xl font-semibold tracking-tight">
-							Entrar a El Rincón de José
+							El Rincón de José
 						</CardTitle>
 						<CardDescription className="text-balance text-base">
-							Continúa a tu cuenta para descubrir juegos, partidas y nuevos
-							retos.
+							Gestiona registros, tiempos y pagos del centro de juegos.
 						</CardDescription>
 					</div>
 				</CardHeader>

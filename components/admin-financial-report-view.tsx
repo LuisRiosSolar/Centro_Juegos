@@ -1,21 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
 	CalendarDaysIcon,
-	DownloadIcon,
 	FileSpreadsheetIcon,
 	Gamepad2Icon,
 	HourglassIcon,
 	LayersIcon,
 	PrinterIcon,
 	ReceiptTextIcon,
+	RotateCcwIcon,
 	SearchIcon,
+	SparklesIcon,
 	TrendingUpIcon,
 	WalletCardsIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { syncAccountingData } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -36,28 +39,59 @@ import type {
 	FinancialReportItem,
 	FinancialReportSummary,
 } from "@/lib/game-sessions";
+import { cn } from "@/lib/utils";
 
 export function AdminFinancialReportView({
 	initialSessions,
 	initialSummary,
 	initialStartDate,
 	initialEndDate,
+	isRoot = false,
 }: {
 	initialSessions: FinancialReportItem[];
 	initialSummary: FinancialReportSummary;
 	initialStartDate: string;
 	initialEndDate: string;
+	isRoot?: boolean;
 }) {
 	const router = useRouter();
 	const [startDate, setStartDate] = useState(initialStartDate);
 	const [endDate, setEndDate] = useState(initialEndDate);
 	const [query, setQuery] = useState("");
 	const [methodFilter, setMethodFilter] = useState<string>("ALL");
+	const [isPending, startTransition] = useTransition();
 
 	function applyDateFilter(desde: string, hasta: string) {
 		setStartDate(desde);
 		setEndDate(hasta);
 		router.push(`/admin/reportes?desde=${desde}&hasta=${hasta}`);
+		router.refresh();
+	}
+
+	function resetFilters() {
+		const now = new Date();
+		const pad = (n: number) => n.toString().padStart(2, "0");
+		const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+		setQuery("");
+		setMethodFilter("ALL");
+		setStartDate(today);
+		setEndDate(today);
+		router.push(`/admin/reportes?desde=${today}&hasta=${today}`);
+		router.refresh();
+		toast.success("Filtros restablecidos y listado actualizado.");
+	}
+
+	function handleSyncAccounting() {
+		startTransition(async () => {
+			const result = await syncAccountingData();
+			if (result.ok) {
+				toast.success(result.message);
+				router.refresh();
+			} else {
+				toast.error(result.message);
+			}
+		});
 	}
 
 	function setPreset(preset: "hoy" | "ayer" | "semana" | "mes") {
@@ -108,7 +142,7 @@ export function AdminFinancialReportView({
 		if (filteredSessions.length === 0) return;
 
 		const headers = [
-			"ID Sesión",
+			"ID Sesion",
 			"Fecha",
 			"Hora Inicio",
 			"Hora Salida",
@@ -116,14 +150,14 @@ export function AdminFinancialReportView({
 			"Cliente",
 			"Documento",
 			"Responsable",
-			"Teléfono",
+			"Telefono",
 			"Plan",
 			"Tiempo Inicial (min)",
-			"Valor Sesión (COP)",
+			"Valor Sesion (COP)",
 			"Tiempo Adicional (min)",
 			"Valor Adicional (COP)",
-			"Total Sesión (COP)",
-			"Método Pago",
+			"Total Sesion (COP)",
+			"Metodo Pago",
 			"Operador",
 		];
 
@@ -176,7 +210,7 @@ export function AdminFinancialReportView({
 			{/* Controls and Date Range Filter */}
 			<Card className="border-border/70 bg-card shadow-xs print:hidden">
 				<CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
-					{/* Quick Presets */}
+					{/* Quick Presets & Reset */}
 					<div className="flex flex-wrap items-center gap-2">
 						<span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">
 							Período:
@@ -208,6 +242,16 @@ export function AdminFinancialReportView({
 							onClick={() => setPreset("mes")}
 						>
 							Este mes
+						</Button>
+
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={resetFilters}
+							className="gap-1.5 ml-1"
+						>
+							<RotateCcwIcon className="size-3.5" />
+							Limpiar filtros
 						</Button>
 					</div>
 
@@ -256,6 +300,20 @@ export function AdminFinancialReportView({
 								<PrinterIcon className="size-4 mr-1" />
 								Imprimir
 							</Button>
+
+							{/* Superadmin Sync Accounting Button */}
+							{isRoot ? (
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={isPending}
+									onClick={handleSyncAccounting}
+									className="border-primary/40 text-primary hover:bg-primary/10 transition-all gap-1.5"
+								>
+									<SparklesIcon className={cn("size-3.5", isPending && "animate-spin")} />
+									{isPending ? "Actualizando..." : "Actualizar Contabilidad"}
+								</Button>
+							) : null}
 						</div>
 					</div>
 				</CardContent>

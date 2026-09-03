@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Clock, Gamepad2, Phone, UserRound } from "lucide-react";
+import { Clock, Gamepad2, Phone, PlusCircleIcon, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { adjustSessionTime, finishGameSession } from "@/app/admin/actions";
@@ -20,6 +20,7 @@ export type ActiveSessionCardData = {
 	responsableNombre: string;
 	responsableTelefono: string;
 	planNombre: string;
+	planMinutos?: number;
 	precio: string;
 	creadoPor: string;
 };
@@ -30,7 +31,16 @@ type SessionCountdownCardProps = {
 	compact?: boolean;
 };
 
-const adjustmentOptions = [3, 5, 10, 15, 20, 30] as const;
+export function getPlanDynamicOptions(planMinutos: number = 30): number[] {
+	const base = Math.max(1, planMinutos);
+	const half = Math.max(1, Math.round(base * 0.5));
+	return [
+		half, // 0.5x (ej. 5, 8, 10, 15, 30)
+		base, // 1x   (ej. 10, 15, 20, 30, 60)
+		base * 2, // 2x (ej. 20, 30, 40, 60, 120)
+		base * 3, // 3x (ej. 30, 45, 60, 90, 180)
+	];
+}
 
 export function SessionCountdownCard({
 	session,
@@ -52,16 +62,25 @@ export function SessionCountdownCard({
 	const isAlmostDone = !isFinished && remainingMs <= 10 * 60_000;
 	const [isPending, startTransition] = useTransition();
 
-	function adjustTime(minutes: number) {
-		if (minutes < 0 && session.minutosTotales + minutes < 1) {
-			toast.error("Ajuste de tiempo excede el mínimo permitido.");
-			return;
-		}
+	const planMinutes =
+		session.planMinutos && session.planMinutos > 0
+			? session.planMinutos
+			: session.minutosTotales;
+	const planPrice = Number(session.precio) || 0;
+	const dynamicAddOptions = useMemo(
+		() => getPlanDynamicOptions(planMinutes),
+		[planMinutes],
+	);
 
+	function adjustTime(minutes: number) {
 		startTransition(async () => {
 			const response = await adjustSessionTime(session.id, minutes);
 
-			if (!response.ok) toast.error(response.message);
+			if (!response.ok) {
+				toast.error(response.message);
+				return;
+			}
+			toast.success(response.message);
 		});
 	}
 
@@ -87,8 +106,8 @@ export function SessionCountdownCard({
 	return (
 		<Card
 			className={cn(
-				"h-full",
-				isFinished && "border-destructive/40 bg-destructive/5 opacity-80",
+				"h-full border-border/70 bg-card transition-all",
+				isFinished && "border-destructive/40 bg-destructive/5 opacity-85",
 			)}
 		>
 			<CardContent className={cn("p-5", compact && "p-4")}>
@@ -135,38 +154,38 @@ export function SessionCountdownCard({
 										compact ? "text-xl" : "text-2xl",
 									)}
 								>
-									<Gamepad2 className="size-5" />
+									<Gamepad2 className="size-5 text-primary" />
 									{session.clienteNombre}
 								</h3>
-								<p className="mt-1 text-sm text-muted-foreground">
+								<p className="mt-1 text-xs text-muted-foreground">
 									ID {session.clienteIdentificacion}
 								</p>
 							</div>
 
-							<div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+							<div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
 								<p className="flex items-center gap-2">
-									<UserRound className="size-4" />
+									<UserRound className="size-3.5" />
 									{session.responsableNombre}
 								</p>
 								<p className="flex items-center gap-2">
-									<Phone className="size-4" />
+									<Phone className="size-3.5" />
 									{session.responsableTelefono}
 								</p>
 							</div>
 						</div>
 
-						<Card size="sm" className={cn(!compact && "md:min-w-64")}>
-							<CardContent className={cn("p-5 text-center", compact && "p-3")}>
-								<p className="flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
-									<Clock className="size-4" />
+						<Card size="sm" className={cn(!compact && "md:min-w-56", "border-border/60 shadow-xs")}>
+							<CardContent className={cn("p-4 text-center", compact && "p-3")}>
+								<p className="flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+									<Clock className="size-3.5" />
 									{isManuallyFinished ? "Terminó" : "Cuenta regresiva"}
 								</p>
-								<p className="mt-3 font-mono text-4xl font-semibold tracking-tight">
+								<p className="mt-2 font-mono text-3xl font-bold tracking-tight tabular-nums text-foreground">
 									{isManuallyFinished
 										? "TERMINÓ"
 										: formatRemaining(remainingMs)}
 								</p>
-								<p className="mt-2 text-xs text-muted-foreground">
+								<p className="mt-1 text-xs text-muted-foreground">
 									{isManuallyFinished && session.fechaSalida
 										? `Salida: ${formatDateTime(session.fechaSalida)}`
 										: `Termina: ${formatTime(endsAt)}`}
@@ -175,29 +194,55 @@ export function SessionCountdownCard({
 						</Card>
 					</div>
 
-					<div className="space-y-3">
+					<div className="space-y-4">
 						<progress
-							className="h-3 w-full"
+							className="h-2.5 w-full rounded-full overflow-hidden"
 							value={isManuallyFinished ? 100 : Math.min(100, progress)}
 							max={100}
 						/>
+
 						{canAdjustTime ? (
-							<div className="grid gap-3 sm:grid-cols-2">
-								<AdjustmentButtons
-									label="Disminuir tiempo"
-									options={adjustmentOptions}
-									disabled={isPending || isFinished}
-									canUse={(minutes) => session.minutosTotales - minutes >= 1}
-									onAdjust={(minutes) => adjustTime(-minutes)}
-								/>
-								<AdjustmentButtons
-									label={isFinished ? "Reanudar con tiempo" : "Agregar tiempo"}
-									options={adjustmentOptions}
-									disabled={isPending}
-									canUse={() => true}
-									onAdjust={adjustTime}
-								/>
-								<div className="sm:col-span-2">
+							<div className="space-y-3 pt-1">
+								{/* Dynamic Add Time Section */}
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+											<PlusCircleIcon className="size-3.5 text-primary" />
+											{isFinished ? "Reanudar con tiempo extra" : "Agregar tiempo"}
+										</p>
+										<span className="text-[11px] text-muted-foreground">
+											Tarifa {session.planNombre} ({planMinutes} min)
+										</span>
+									</div>
+
+									<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+										{dynamicAddOptions.map((minutes) => {
+											const cost = Math.round(
+												(planPrice / planMinutes) * minutes,
+											);
+											return (
+												<Button
+													key={minutes}
+													variant="outline"
+													size="sm"
+													type="button"
+													disabled={isPending}
+													onClick={() => adjustTime(minutes)}
+													className="flex h-auto flex-col items-center justify-center gap-0.5 py-2 px-2 border-border/80 hover:border-primary/60 hover:bg-primary/5 transition-all shadow-xs"
+												>
+													<span className="font-bold text-xs sm:text-sm text-foreground">
+														+{minutes} min
+													</span>
+													<span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+														+${cost.toLocaleString("es-CO")}
+													</span>
+												</Button>
+											);
+										})}
+									</div>
+								</div>
+
+								<div>
 									<Button
 										variant="destructive"
 										size="sm"
@@ -210,11 +255,12 @@ export function SessionCountdownCard({
 								</div>
 							</div>
 						) : null}
-						<div className="grid gap-2 text-center text-sm sm:grid-cols-4">
+
+						<div className="grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-4">
 							<Metric label="Plan" value={session.planNombre} />
-							<Metric label="Tiempo" value={`${session.minutosTotales} min`} />
+							<Metric label="Tiempo total" value={`${session.minutosTotales} min`} />
 							<Metric
-								label="Valor"
+								label="Valor base"
 								value={`$${Number(session.precio).toLocaleString("es-CO")}`}
 							/>
 							<Metric label="Creada por" value={session.creadoPor} />
@@ -226,55 +272,17 @@ export function SessionCountdownCard({
 	);
 }
 
-function AdjustmentButtons({
-	label,
-	options,
-	disabled,
-	canUse,
-	onAdjust,
-}: {
-	label: string;
-	options: readonly number[];
-	disabled: boolean;
-	canUse: (minutes: number) => boolean;
-	onAdjust: (minutes: number) => void;
-}) {
+function Metric({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="space-y-1.5">
-			<p className="text-xs font-medium text-muted-foreground">{label}</p>
-			<div className="grid grid-cols-3 gap-1.5">
-				{options.map((minutes) => (
-					<Button
-						key={minutes}
-						variant="outline"
-						size="xs"
-						type="button"
-						disabled={disabled || !canUse(minutes)}
-						onClick={() => onAdjust(minutes)}
-					>
-						{minutes} min
-					</Button>
-				))}
-			</div>
+		<div className="rounded-xl border border-border/60 bg-muted/40 p-2">
+			<p className="text-[11px] text-muted-foreground">{label}</p>
+			<p className="mt-0.5 font-bold text-foreground truncate">{value}</p>
 		</div>
 	);
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-	return (
-		<Card size="sm">
-			<CardContent className="p-3">
-				<p className="text-xs text-muted-foreground">{label}</p>
-				<p className="truncate font-semibold">{value}</p>
-			</CardContent>
-		</Card>
-	);
-}
-
-function formatRemaining(ms: number) {
-	if (ms <= 0) {
-		return "00:00:00";
-	}
+function formatRemaining(ms: number): string {
+	if (ms <= 0) return "00:00:00";
 
 	const totalSeconds = Math.floor(ms / 1000);
 	const hours = Math.floor(totalSeconds / 3600);
@@ -282,20 +290,22 @@ function formatRemaining(ms: number) {
 	const seconds = totalSeconds % 60;
 
 	return [hours, minutes, seconds]
-		.map((value) => value.toString().padStart(2, "0"))
+		.map((part) => part.toString().padStart(2, "0"))
 		.join(":");
 }
 
-function formatDateTime(value: string) {
-	return new Intl.DateTimeFormat("es-CO", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(new Date(value));
-}
-
-function formatTime(value: number) {
+function formatTime(timestamp: number): string {
 	return new Intl.DateTimeFormat("es-CO", {
 		hour: "2-digit",
 		minute: "2-digit",
-	}).format(new Date(value));
+		timeZone: "America/Bogota",
+	}).format(new Date(timestamp));
+}
+
+function formatDateTime(isoString: string): string {
+	return new Intl.DateTimeFormat("es-CO", {
+		dateStyle: "short",
+		timeStyle: "short",
+		timeZone: "America/Bogota",
+	}).format(new Date(isoString));
 }
