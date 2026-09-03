@@ -5,7 +5,8 @@ import { CalendarIcon, CheckCircle2Icon } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { createGameSession, type ActionResult } from "@/app/admin/actions";
+import { createGameSession } from "@/app/admin/actions";
+import { type ActionResult } from "@/lib/auth-schemas";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";

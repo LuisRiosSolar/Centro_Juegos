@@ -17,25 +17,17 @@ import {
 } from "@/db/schema";
 import { getAdminAccess } from "@/lib/admin-auth";
 import {
+	createManagedUserSchema,
+	type ActionResult,
+	type CreateManagedUserValues,
+} from "@/lib/auth-schemas";
+import {
 	createPlanSchema,
 	createSessionSchema,
 	type CreatePlanValues,
 	type CreateSessionValues,
 } from "@/lib/session-schemas";
 import { auth } from "@/lib/auth";
-
-export type ActionResult =
-	| { ok: true; message: string }
-	| { ok: false; message: string };
-
-export const createManagedUserSchema = z.object({
-	name: z.string().trim().min(2, "El nombre es obligatorio."),
-	email: z.string().trim().email("Ingresa un correo válido."),
-	password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
-	role: z.enum(["user", "admin"]).default("user"),
-});
-
-export type CreateManagedUserValues = z.infer<typeof createManagedUserSchema>;
 
 export async function createManagedUser(
 	values: CreateManagedUserValues,
@@ -83,43 +75,65 @@ export async function createManagedUser(
 		};
 	}
 
-	const created = await auth.api.signUpEmail({
-		asResponse: false,
-		body: {
-			email: normalizedEmail,
-			name: parsed.data.name.trim(),
-			password: parsed.data.password,
-		},
-		headers: undefined,
-	});
+	try {
+		const created = await auth.api.signUpEmail({
+			asResponse: false,
+			body: {
+				email: normalizedEmail,
+				name: parsed.data.name.trim(),
+				password: parsed.data.password,
+			},
+			headers: undefined,
+		});
 
-	if (!created?.user) {
+		if (!created?.user) {
+			return {
+				ok: false,
+				message: "No se pudo crear el usuario.",
+			};
+		}
+
+		// Link roleId in db
+		const targetRoleName = parsed.data.role.toUpperCase();
+		let [roleRecord] = await db
+			.select({ id: rol.id })
+			.from(rol)
+			.where(ilike(rol.nombre, targetRoleName))
+			.limit(1);
+
+		if (!roleRecord) {
+			const newRoleId = crypto.randomUUID();
+			await db.insert(rol).values({
+				id: newRoleId,
+				nombre: targetRoleName,
+				descripcion:
+					targetRoleName === "SUPERADMIN"
+						? "Super Administrador"
+						: "Administrador",
+			});
+			roleRecord = { id: newRoleId };
+		}
+
+		if (roleRecord && created.user.id) {
+			await db
+				.update(user)
+				.set({ roleId: roleRecord.id })
+				.where(eq(user.id, created.user.id));
+		}
+
+		revalidateAdminViews();
+		return {
+			ok: true,
+			message: `Usuario ${parsed.data.name.trim()} creado correctamente con rol ${targetRoleName === "SUPERADMIN" ? "Super Administrador" : "Administrador"}.`,
+		};
+	} catch (error) {
+		const errorMsg =
+			error instanceof Error ? error.message : "Error inesperado al crear usuario";
 		return {
 			ok: false,
-			message: "No se pudo crear el usuario.",
+			message: errorMsg,
 		};
 	}
-
-	// Link roleId in db if role matches
-	const targetRoleName = parsed.data.role.toUpperCase();
-	const [roleRecord] = await db
-		.select({ id: rol.id })
-		.from(rol)
-		.where(ilike(rol.nombre, targetRoleName))
-		.limit(1);
-
-	if (roleRecord && created.user.id) {
-		await db
-			.update(user)
-			.set({ roleId: roleRecord.id })
-			.where(eq(user.id, created.user.id));
-	}
-
-	revalidateAdminViews();
-	return {
-		ok: true,
-		message: `Usuario creado correctamente para ${normalizedEmail}.`,
-	};
 }
 
 export async function createPlan(
@@ -147,6 +161,77 @@ export async function createPlan(
 	revalidateAdminViews();
 
 	return { ok: true, message: "Plan creado correctamente." };
+}
+
+export async function updatePlan(
+	planId: string,
+	values: CreatePlanValues,
+): Promise<ActionResult> {
+	const access = await getAdminAccess();
+	if (!access.ok) return forbiddenResult(access.reason);
+
+	if (!access.isRoot) {
+		return {
+			ok: false,
+			message: "Solo el super administrador puede editar planes.",
+		};
+	}
+
+	const parsed = createPlanSchema.safeParse(values);
+	if (!parsed.success) {
+		return {
+			ok: false,
+			message: parsed.error.issues[0]?.message ?? "Datos inválidos",
+		};
+	}
+
+	const [existing] = await db
+		.select({ id: planTiempo.id })
+		.from(planTiempo)
+		.where(eq(planTiempo.id, planId))
+		.limit(1);
+
+	if (!existing) {
+		return { ok: false, message: "El plan no existe." };
+	}
+
+	await db
+		.update(planTiempo)
+		.set({
+			nombre: parsed.data.nombre,
+			minutos: parsed.data.minutos,
+			precio: parsed.data.precio.toString(),
+		})
+		.where(eq(planTiempo.id, planId));
+
+	revalidateAdminViews();
+	return { ok: true, message: "Plan actualizado correctamente." };
+}
+
+export async function togglePlanStatus(
+	planId: string,
+	activo: boolean,
+): Promise<ActionResult> {
+	const access = await getAdminAccess();
+	if (!access.ok) return forbiddenResult(access.reason);
+
+	if (!access.isRoot) {
+		return {
+			ok: false,
+			message: "Solo el super administrador puede modificar planes.",
+		};
+	}
+
+	await db
+		.update(planTiempo)
+		.set({ activo })
+		.where(eq(planTiempo.id, planId));
+
+	revalidateAdminViews();
+	return {
+		ok: true,
+		message: activo ? "Plan activado." : "Plan desactivado.",
+	};
 }
 
 export async function createGameSession(
@@ -297,11 +382,11 @@ export async function adjustSessionTime(
 
 	const updateValues = isFinished
 		? {
-				fechaIngreso: new Date(now.getTime() - session.minutosTotales * 60_000),
-				fechaSalida: null,
-				minutosTotales: nextMinutes,
-				estado: "ACTIVA" as const,
-			}
+			fechaIngreso: new Date(now.getTime() - session.minutosTotales * 60_000),
+			fechaSalida: null,
+			minutosTotales: nextMinutes,
+			estado: "ACTIVA" as const,
+		}
 		: { minutosTotales: nextMinutes };
 
 	await db

@@ -15,9 +15,29 @@ export async function getActivePlans() {
 			nombre: planTiempo.nombre,
 			minutos: planTiempo.minutos,
 			precio: planTiempo.precio,
+			activo: planTiempo.activo,
 		})
 		.from(planTiempo)
-		.where(eq(planTiempo.activo, true));
+		.where(eq(planTiempo.activo, true))
+		.orderBy(planTiempo.minutos);
+
+	return plans.map((plan) => ({
+		...plan,
+		precio: plan.precio.toString(),
+	}));
+}
+
+export async function getAllPlans() {
+	const plans = await db
+		.select({
+			id: planTiempo.id,
+			nombre: planTiempo.nombre,
+			minutos: planTiempo.minutos,
+			precio: planTiempo.precio,
+			activo: planTiempo.activo,
+		})
+		.from(planTiempo)
+		.orderBy(planTiempo.minutos);
 
 	return plans.map((plan) => ({
 		...plan,

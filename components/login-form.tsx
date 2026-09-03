@@ -66,7 +66,7 @@ export function LoginForm({
 		const { error } = await authClient.signIn.email({
 			email: parsed.data.email,
 			password: parsed.data.password,
-			callbackURL: "/sesiones",
+			callbackURL: "/",
 		});
 
 		if (error) {
@@ -74,7 +74,7 @@ export function LoginForm({
 			return;
 		}
 
-		router.push("/sesiones");
+		router.push("/");
 		router.refresh();
 	}
 

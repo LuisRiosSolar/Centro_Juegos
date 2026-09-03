@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { UsersIcon, ShieldAlertIcon } from "lucide-react";
+import { ShieldAlertIcon } from "lucide-react";
 
-import { AdminUserForm } from "@/components/admin-user-form";
+import { AdminCreateUserDialog } from "@/components/admin-create-user-dialog";
 import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminUsersListView } from "@/components/admin-users-list-view";
 import {
 	Card,
 	CardContent,
@@ -76,66 +77,22 @@ export default async function AdminUsersPage() {
 							<div className="flex items-center gap-3">
 								<SidebarTrigger />
 								<div>
-									<p className="text-sm text-muted-foreground">Administración</p>
-									<h1 className="text-3xl font-semibold tracking-tight">
+									<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+										Administración
+									</p>
+									<h1 className="text-3xl font-bold tracking-tight text-foreground">
 										Gestión de usuarios
 									</h1>
 									<p className="mt-1 text-sm text-muted-foreground">
-										Crea y administra las cuentas autorizadas para operar el centro.
+										Cuentas autorizadas para operar y administrar el centro de juegos.
 									</p>
 								</div>
 							</div>
+							<AdminCreateUserDialog />
 						</header>
 
-						<div className="grid gap-6 lg:grid-cols-[440px_minmax(0,1fr)]">
-							<div>
-								<AdminUserForm />
-							</div>
-
-							<section className="space-y-4">
-								<Card className="border-border/70 shadow-sm">
-									<CardHeader>
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2">
-												<UsersIcon className="size-5 text-primary" />
-												<CardTitle className="text-xl font-semibold">
-													Usuarios registrados
-												</CardTitle>
-											</div>
-											<span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">
-												{existingUsers.length} en total
-											</span>
-										</div>
-										<CardDescription>
-											Listado de cuentas existentes en la base de datos.
-										</CardDescription>
-									</CardHeader>
-									<CardContent>
-										<div className="divide-y divide-border/60">
-											{existingUsers.map((u) => (
-												<div
-													key={u.id}
-													className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
-												>
-													<div className="min-w-0">
-														<p className="font-medium text-foreground truncate">
-															{u.name}
-														</p>
-														<p className="text-xs text-muted-foreground truncate">
-															{u.email}
-														</p>
-													</div>
-													<div className="flex items-center gap-2 shrink-0">
-														<span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-															{u.roleName ?? "Usuario"}
-														</span>
-													</div>
-												</div>
-											))}
-										</div>
-									</CardContent>
-								</Card>
-							</section>
+						<div className="w-full">
+							<AdminUsersListView users={existingUsers} />
 						</div>
 					</div>
 				</main>
