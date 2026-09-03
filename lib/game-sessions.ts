@@ -59,6 +59,7 @@ export async function getActiveGameSessions() {
 			responsableNombre: responsable.nombreCompleto,
 			responsableTelefono: responsable.telefono,
 			planNombre: planTiempo.nombre,
+			planMinutos: planTiempo.minutos,
 			precio: planTiempo.precio,
 			creadoPor: user.name,
 		})
@@ -79,6 +80,7 @@ export async function getActiveGameSessions() {
 		...session,
 		fechaIngreso: session.fechaIngreso.toISOString(),
 		precio: session.precio.toString(),
+		planMinutos: session.planMinutos,
 	}));
 }
 
@@ -95,6 +97,7 @@ export async function getAdminGameSessions() {
 			responsableNombre: responsable.nombreCompleto,
 			responsableTelefono: responsable.telefono,
 			planNombre: planTiempo.nombre,
+			planMinutos: planTiempo.minutos,
 			precio: planTiempo.precio,
 			creadoPor: user.name,
 		})
@@ -110,6 +113,7 @@ export async function getAdminGameSessions() {
 		fechaIngreso: session.fechaIngreso.toISOString(),
 		fechaSalida: session.fechaSalida?.toISOString() ?? null,
 		precio: session.precio.toString(),
+		planMinutos: session.planMinutos,
 	}));
 }
 

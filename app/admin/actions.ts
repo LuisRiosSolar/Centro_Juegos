@@ -334,8 +334,8 @@ export async function adjustSessionTime(
 	const access = await getAdminAccess();
 	if (!access.ok) return forbiddenResult(access.reason);
 
-	if (!Number.isInteger(minutos) || minutos === 0) {
-		return { ok: false, message: "Ajuste de tiempo inválido." };
+	if (!Number.isInteger(minutos) || minutos <= 0) {
+		return { ok: false, message: "Solo se permite agregar tiempo a las sesiones." };
 	}
 
 	const [session] = await db
@@ -358,25 +358,11 @@ export async function adjustSessionTime(
 		session.fechaIngreso.getTime() + session.minutosTotales * 60_000;
 	const isFinished = session.estado !== "ACTIVA" || endsAt <= now.getTime();
 
-	if (isFinished && minutos < 0) {
-		return {
-			ok: false,
-			message: "No puedes restar tiempo a una sesión terminada.",
-		};
-	}
-
-	if (minutos < 0 && session.minutosTotales + minutos < 1) {
-		return {
-			ok: false,
-			message: "No puedes disminuir el tiempo por debajo de 1 minuto.",
-		};
-	}
-
 	const nextMinutes = session.minutosTotales + minutos;
 	const appliedDelta = nextMinutes - session.minutosTotales;
 
-	if (appliedDelta === 0) {
-		return { ok: false, message: "La sesión ya está en el mínimo permitido." };
+	if (appliedDelta <= 0) {
+		return { ok: false, message: "Ajuste de tiempo no válido." };
 	}
 
 	const updateValues = isFinished
