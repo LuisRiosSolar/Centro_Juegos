@@ -6,11 +6,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 
 # Install dependencies in a cacheable layer.
-# npm install is intentional until package-lock.json is regenerated and synced.
 FROM base AS deps
 COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm install --no-audit --no-fund
+RUN if [ -f package-lock.json ]; then \
+      npm ci --no-audit --no-fund; \
+    else \
+      npm install --no-audit --no-fund; \
+    fi
 
 # Build the application.
 FROM base AS builder
