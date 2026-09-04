@@ -242,8 +242,13 @@ export function AdminSessionForm({
 							<Input
 								id="clienteIdentificacion"
 								placeholder="Ej. 1020304050"
+								inputMode="numeric"
 								autoComplete="off"
-								{...register("clienteIdentificacion")}
+								{...register("clienteIdentificacion", {
+									onChange: (e) => {
+										e.target.value = e.target.value.replace(/\D/g, "");
+									},
+								})}
 							/>
 							<FieldError errors={[errors.clienteIdentificacion]} />
 						</Field>
@@ -256,7 +261,11 @@ export function AdminSessionForm({
 								id="clienteNombre"
 								placeholder="Nombre del jugador"
 								autoComplete="name"
-								{...register("clienteNombre")}
+								{...register("clienteNombre", {
+									onChange: (e) => {
+										e.target.value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "");
+									},
+								})}
 							/>
 							<FieldError errors={[errors.clienteNombre]} />
 						</Field>
@@ -304,8 +313,13 @@ export function AdminSessionForm({
 							<Input
 								id="responsableIdentificacion"
 								placeholder="Documento del responsable"
+								inputMode="numeric"
 								autoComplete="off"
-								{...register("responsableIdentificacion")}
+								{...register("responsableIdentificacion", {
+									onChange: (e) => {
+										e.target.value = e.target.value.replace(/\D/g, "");
+									},
+								})}
 							/>
 							<FieldError errors={[errors.responsableIdentificacion]} />
 						</Field>
@@ -318,7 +332,11 @@ export function AdminSessionForm({
 								id="responsableNombre"
 								placeholder="Nombre del responsable"
 								autoComplete="name"
-								{...register("responsableNombre")}
+								{...register("responsableNombre", {
+									onChange: (e) => {
+										e.target.value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "");
+									},
+								})}
 							/>
 							<FieldError errors={[errors.responsableNombre]} />
 						</Field>
@@ -331,8 +349,13 @@ export function AdminSessionForm({
 								id="responsableTelefono"
 								placeholder="Número de contacto"
 								type="tel"
+								inputMode="numeric"
 								autoComplete="tel"
-								{...register("responsableTelefono")}
+								{...register("responsableTelefono", {
+									onChange: (e) => {
+										e.target.value = e.target.value.replace(/\D/g, "");
+									},
+								})}
 							/>
 							<FieldError errors={[errors.responsableTelefono]} />
 						</Field>
