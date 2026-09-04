@@ -313,17 +313,17 @@ export async function finishGameSession(
 
 	if (!session) return { ok: false, message: "Sesión no encontrada." };
 	if (session.estado !== "ACTIVA") {
-		return { ok: false, message: "La sesión ya está terminada." };
+		return { ok: false, message: "La sesión ya no está activa." };
 	}
 
 	await db
 		.update(sesionJuego)
-		.set({ estado: "FINALIZADA", fechaSalida: new Date() })
+		.set({ estado: "CANCELADA", fechaSalida: new Date() })
 		.where(eq(sesionJuego.id, session.id));
 
 	revalidateAdminViews();
 
-	return { ok: true, message: "Sesión finalizada correctamente." };
+	return { ok: true, message: "Sesión cancelada manualmente." };
 }
 
 export async function adjustSessionTime(

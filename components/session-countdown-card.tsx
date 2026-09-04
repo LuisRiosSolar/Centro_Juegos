@@ -85,9 +85,11 @@ export function SessionCountdownCard({
 	const remainingMs = endsAt - now;
 	const elapsedMs = Math.min(totalMs, Math.max(0, now - startedAt));
 	const progress = Math.round((elapsedMs / totalMs) * 100);
-	const isManuallyFinished = session.estado !== "ACTIVA";
-	const isFinished = isManuallyFinished || remainingMs <= 0;
-	const isAlmostDone = !isFinished && remainingMs <= 10 * 60_000;
+	const isCancelled = session.estado === "CANCELADA";
+	const isDbFinalized = session.estado === "FINALIZADA";
+	const isTimeOver = session.estado === "ACTIVA" && remainingMs <= 0;
+	const isFinished = isCancelled || isDbFinalized || isTimeOver;
+	const isAlmostDone = !isFinished && session.estado === "ACTIVA" && remainingMs <= 10 * 60_000;
 	const [isPending, startTransition] = useTransition();
 
 	const gender = detectGender(session.clienteNombre);
@@ -114,7 +116,7 @@ export function SessionCountdownCard({
 		});
 	}
 
-	function finishSession() {
+	function handleCancelSession() {
 		startTransition(async () => {
 			const response = await finishGameSession(session.id);
 
@@ -136,7 +138,7 @@ export function SessionCountdownCard({
 		<Card
 			className={cn(
 				"h-full border-border/80 bg-card/95 transition-all shadow-sm hover:shadow-md",
-				isFinished && "border-destructive/40 bg-destructive/5 opacity-85",
+				isFinished && "border-destructive/40 bg-destructive/5 opacity-90",
 				isAlmostDone && "border-primary/50 shadow-primary/5"
 			)}
 		>
@@ -154,23 +156,27 @@ export function SessionCountdownCard({
 							<div className="flex flex-wrap items-center gap-2">
 								<span
 									className={cn(
-										"rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide",
-										isFinished
-											? "bg-destructive text-destructive-foreground"
-											: isAlmostDone
-												? "bg-primary text-primary-foreground animate-pulse"
-												: "bg-secondary text-secondary-foreground",
+										"rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide shadow-xs",
+										isCancelled
+											? "bg-rose-600 text-white"
+											: isDbFinalized
+												? "bg-muted text-muted-foreground border border-border"
+												: isTimeOver
+													? "bg-amber-500 text-amber-950 font-black"
+													: isAlmostDone
+														? "bg-primary text-primary-foreground animate-pulse"
+														: "bg-emerald-600 text-white",
 									)}
 								>
-									{isManuallyFinished
-										? session.estado === "FINALIZADA"
-											? "TERMINÓ"
-											: session.estado
-										: isFinished
-											? "TIEMPO TERMINADO"
-											: isAlmostDone
-												? "POR TERMINAR"
-												: "ACTIVA"}
+									{isCancelled
+										? "CANCELADA"
+										: isDbFinalized
+											? "FINALIZADA"
+											: isTimeOver
+												? "TIEMPO TERMINADO"
+												: isAlmostDone
+													? "POR TERMINAR"
+													: "ACTIVA"}
 								</span>
 								<span className="text-[11px] text-muted-foreground font-medium">
 									{isFinished && session.fechaSalida
@@ -196,7 +202,7 @@ export function SessionCountdownCard({
 												: "1px solid rgba(var(--primary) / 0.3)",
 									}}
 								>
-									{isFinished ? "⏱️" : gender === "girl" ? "👧" : "👦"}
+									{isCancelled ? "🚫" : isFinished ? "⏱️" : gender === "girl" ? "👧" : "👦"}
 								</div>
 								<div className="min-w-0">
 									<h3
@@ -235,33 +241,47 @@ export function SessionCountdownCard({
 							className={cn(
 								"shrink-0 rounded-2xl border p-3 text-center transition-all",
 								!compact && "md:min-w-[190px]",
-								isFinished
-									? "border-destructive/30 bg-destructive/10"
-									: isAlmostDone
-										? "border-primary/40 bg-primary/10 shadow-sm shadow-primary/10"
-										: "border-border/80 bg-muted/20"
+								isCancelled
+									? "border-rose-500/30 bg-rose-500/10"
+									: isDbFinalized
+										? "border-border/80 bg-muted/40"
+										: isTimeOver
+											? "border-amber-500/40 bg-amber-500/10"
+											: isAlmostDone
+												? "border-primary/40 bg-primary/10 shadow-sm shadow-primary/10"
+												: "border-border/80 bg-muted/20"
 							)}
 						>
 							<p className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
 								<Clock className="size-3 text-primary" />
-								{isManuallyFinished ? "Terminó" : "Tiempo restante"}
+								{isCancelled
+									? "Cancelada"
+									: isDbFinalized
+										? "Finalizada"
+										: isTimeOver
+											? "Tiempo cumplido"
+											: "Tiempo restante"}
 							</p>
 							<p
 								className={cn(
 									"mt-1 font-mono text-2xl sm:text-3xl font-black tracking-tight tabular-nums",
-									isFinished
-										? "text-destructive"
-										: isAlmostDone
-											? "text-primary"
-											: "text-foreground"
+									isCancelled
+										? "text-rose-600 dark:text-rose-400"
+										: isDbFinalized
+											? "text-muted-foreground"
+											: isTimeOver
+												? "text-amber-600 dark:text-amber-400"
+												: isAlmostDone
+													? "text-primary"
+													: "text-foreground"
 								)}
 							>
-								{isManuallyFinished
+								{isFinished
 									? "00:00:00"
 									: formatRemaining(remainingMs)}
 							</p>
 							<p className="mt-0.5 text-[11px] text-muted-foreground font-medium">
-								{isManuallyFinished && session.fechaSalida
+								{isFinished && session.fechaSalida
 									? `Salida: ${formatDateTime(session.fechaSalida)}`
 									: `Termina: ${formatTime(endsAt)}`}
 							</p>
@@ -274,14 +294,18 @@ export function SessionCountdownCard({
 							<div
 								className={cn(
 									"h-full rounded-full transition-all duration-500",
-									isFinished
-										? "bg-destructive"
-										: isAlmostDone
-											? "bg-primary"
-											: "bg-emerald-500"
+									isCancelled
+										? "bg-rose-500"
+										: isDbFinalized
+											? "bg-muted-foreground"
+											: isTimeOver
+												? "bg-amber-500"
+												: isAlmostDone
+													? "bg-primary"
+													: "bg-emerald-500"
 								)}
 								style={{
-									width: `${isManuallyFinished ? 100 : Math.min(100, Math.max(0, progress))}%`,
+									width: `${isFinished ? 100 : Math.min(100, Math.max(0, progress))}%`,
 								}}
 							/>
 						</div>
@@ -333,10 +357,10 @@ export function SessionCountdownCard({
 										size="sm"
 										type="button"
 										disabled={isPending || isFinished}
-										onClick={finishSession}
+										onClick={handleCancelSession}
 										className="h-8 text-xs font-semibold px-3"
 									>
-										Finalizar sesión
+										Cancelar sesión
 									</Button>
 								</div>
 							</div>
