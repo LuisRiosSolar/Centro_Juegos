@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Clock, Phone, PlusCircleIcon, UserRound, Sparkles } from "lucide-react";
+import { Clock, Phone, PlusCircleIcon, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { adjustSessionTime, finishGameSession } from "@/app/admin/actions";
@@ -67,7 +67,20 @@ export function detectGender(name: string): "boy" | "girl" {
 export function getPlanDynamicOptions(planMinutos: number = 30): number[] {
 	const base = Math.max(1, planMinutos);
 	const half = Math.max(1, Math.round(base * 0.5));
-	return [half, base, base * 2, base * 3];
+	const rawOptions = [half, base, base * 2, base * 3];
+	const uniqueOptions = Array.from(new Set(rawOptions)).filter((m) => m > 0);
+
+	if (uniqueOptions.length < 4) {
+		const fallbackIncrements = [1, 2, 5, 10, 15, 30];
+		for (const inc of fallbackIncrements) {
+			if (!uniqueOptions.includes(inc)) {
+				uniqueOptions.push(inc);
+			}
+			if (uniqueOptions.length === 4) break;
+		}
+	}
+
+	return uniqueOptions.sort((a, b) => a - b);
 }
 
 export function SessionCountdownCard({
@@ -148,6 +161,7 @@ export function SessionCountdownCard({
 					<div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2.5">
 						<div className="flex flex-wrap items-center gap-2">
 							<span
+								suppressHydrationWarning
 								className={cn(
 									"rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide shadow-2xs",
 									isCancelled
@@ -244,6 +258,7 @@ export function SessionCountdownCard({
 
 						{/* Columna Derecha: Caja de Contador / Tiempo */}
 						<div
+							suppressHydrationWarning
 							className={cn(
 								"sm:col-span-5 flex flex-col justify-center items-center rounded-2xl border p-3 text-center transition-all min-h-[110px]",
 								isCancelled
@@ -268,6 +283,7 @@ export function SessionCountdownCard({
 											: "Tiempo restante"}
 							</p>
 							<p
+								suppressHydrationWarning
 								className={cn(
 									"mt-1 font-mono text-2xl sm:text-3xl font-black tracking-tight tabular-nums",
 									isCancelled
@@ -297,6 +313,7 @@ export function SessionCountdownCard({
 					<div className="space-y-3">
 						<div className="h-2.5 w-full overflow-hidden rounded-full bg-muted/60 border border-border/40">
 							<div
+								suppressHydrationWarning
 								className={cn(
 									"h-full rounded-full transition-all duration-500",
 									isCancelled
@@ -330,13 +347,13 @@ export function SessionCountdownCard({
 									</div>
 
 									<div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-										{dynamicAddOptions.map((minutes) => {
+										{dynamicAddOptions.map((minutes, idx) => {
 											const cost = Math.round(
 												(planPrice / planMinutes) * minutes,
 											);
 											return (
 												<Button
-													key={minutes}
+													key={`${session.id}-add-${minutes}-${idx}`}
 													variant="outline"
 													size="sm"
 													type="button"

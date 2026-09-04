@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	CalendarIcon,
 	ChevronLeft,
@@ -110,10 +110,25 @@ export function AdminSessionList({
 		});
 	}, [query, sessions, status, selectedDate]);
 
-	// Reiniciar a la primera página cuando cambian los filtros
-	useEffect(() => {
+	function handleDateChange(newDate: string) {
+		setSelectedDate(newDate);
 		setCurrentPage(1);
-	}, [query, status, selectedDate, pageSize]);
+	}
+
+	function handleStatusChange(newStatus: SessionFilterStatus) {
+		setStatus(newStatus);
+		setCurrentPage(1);
+	}
+
+	function handleQueryChange(newQuery: string) {
+		setQuery(newQuery);
+		setCurrentPage(1);
+	}
+
+	function handlePageSizeChange(newSize: number) {
+		setPageSize(newSize);
+		setCurrentPage(1);
+	}
 
 	// Paginación
 	const effectivePageSize = pageSize === 0 ? filteredSessions.length || 1 : pageSize;
@@ -164,7 +179,7 @@ export function AdminSessionList({
 										size="sm"
 										className="text-xs h-7 px-2.5 font-bold rounded-lg"
 										onClick={() => {
-											setSelectedDate(todayStr);
+											handleDateChange(todayStr);
 											setCalendarOpen(false);
 										}}
 									>
@@ -175,7 +190,7 @@ export function AdminSessionList({
 										size="sm"
 										className="text-xs h-7 px-2.5 font-medium rounded-lg"
 										onClick={() => {
-											setSelectedDate(yesterdayStr);
+											handleDateChange(yesterdayStr);
 											setCalendarOpen(false);
 										}}
 									>
@@ -186,7 +201,7 @@ export function AdminSessionList({
 										size="sm"
 										className="text-xs h-7 px-2.5 font-medium rounded-lg"
 										onClick={() => {
-											setSelectedDate("TODAS");
+											handleDateChange("TODAS");
 											setCalendarOpen(false);
 										}}
 									>
@@ -198,7 +213,7 @@ export function AdminSessionList({
 									selected={selectedDate !== "TODAS" ? parseDateString(selectedDate) : undefined}
 									onSelect={(date) => {
 										if (date) {
-											setSelectedDate(formatDateToParam(date));
+											handleDateChange(formatDateToParam(date));
 											setCalendarOpen(false);
 										}
 									}}
@@ -210,7 +225,7 @@ export function AdminSessionList({
 						<Select
 							value={status}
 							onValueChange={(value) =>
-								setStatus((value ?? "TODAS") as SessionFilterStatus)
+								handleStatusChange((value ?? "TODAS") as SessionFilterStatus)
 							}
 						>
 							<SelectTrigger
@@ -237,7 +252,7 @@ export function AdminSessionList({
 							<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
 							<Input
 								value={query}
-								onChange={(event) => setQuery(event.target.value)}
+								onChange={(event) => handleQueryChange(event.target.value)}
 								placeholder="Buscar niño, acudiente..."
 								aria-label="Buscar sesiones"
 								className="!h-9.5 w-full pl-8.5 pr-3 rounded-xl border-border/80 bg-card text-xs shadow-xs hover:border-primary/50 transition-all"
@@ -251,7 +266,7 @@ export function AdminSessionList({
 					<span className="font-semibold text-foreground/80 mr-1">Filtro rápido:</span>
 					<button
 						type="button"
-						onClick={() => setSelectedDate(todayStr)}
+						onClick={() => handleDateChange(todayStr)}
 						className={cn(
 							"rounded-xl px-3 py-1 transition-all font-medium border text-xs",
 							selectedDate === todayStr
@@ -263,7 +278,7 @@ export function AdminSessionList({
 					</button>
 					<button
 						type="button"
-						onClick={() => setSelectedDate(yesterdayStr)}
+						onClick={() => handleDateChange(yesterdayStr)}
 						className={cn(
 							"rounded-xl px-3 py-1 transition-all font-medium border text-xs",
 							selectedDate === yesterdayStr
@@ -275,7 +290,7 @@ export function AdminSessionList({
 					</button>
 					<button
 						type="button"
-						onClick={() => setSelectedDate("TODAS")}
+						onClick={() => handleDateChange("TODAS")}
 						className={cn(
 							"rounded-xl px-3 py-1 transition-all font-medium border text-xs",
 							selectedDate === "TODAS"
@@ -288,7 +303,7 @@ export function AdminSessionList({
 					{selectedDate !== todayStr && (
 						<button
 							type="button"
-							onClick={() => setSelectedDate(todayStr)}
+							onClick={() => handleDateChange(todayStr)}
 							className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline ml-2"
 						>
 							<RotateCcw className="size-3" />
@@ -343,7 +358,7 @@ export function AdminSessionList({
 						<span>Mostrar</span>
 						<Select
 							value={pageSize.toString()}
-							onValueChange={(val) => setPageSize(Number(val))}
+							onValueChange={(val) => handlePageSizeChange(Number(val))}
 						>
 							<SelectTrigger className="h-8 w-24 text-xs bg-card">
 								<SelectValue />

@@ -117,8 +117,8 @@ export function AdminEditPlanDialog({ plan }: { plan: PlanData }) {
 							</p>
 						) : null}
 						<Field data-invalid={!!errors.nombre}>
-							<FieldLabel htmlFor={`nombre-${plan.id}`}>Nombre del plan</FieldLabel>
-							<Input id={`nombre-${plan.id}`} {...register("nombre")} />
+							<FieldLabel htmlFor={`nombre-${plan.id}`}>Nombre del plan (máx. 20 caracteres)</FieldLabel>
+							<Input id={`nombre-${plan.id}`} maxLength={20} {...register("nombre")} />
 							<FieldError errors={[errors.nombre]} />
 						</Field>
 						<Field data-invalid={!!errors.minutos}>

@@ -50,7 +50,8 @@ export const createSessionSchema = z.object({
 });
 
 export const createPlanSchema = z.object({
-	nombre: requiredText("Ingresa el nombre del plan"),
+	nombre: requiredText("Ingresa el nombre del plan")
+		.max(20, "El nombre del plan no puede superar 20 caracteres"),
 	minutos: z.coerce
 		.number("Ingresa los minutos")
 		.int("Los minutos deben ser un número entero")

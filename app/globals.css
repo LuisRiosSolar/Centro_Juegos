@@ -194,3 +194,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes kid-pulse-warning {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.45), 0 12px 30px rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+  50% {
+    transform: scale(1.025);
+    box-shadow: 0 0 45px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.8), 0 16px 36px rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 255, 255, 1);
+  }
+}
+
+@keyframes countdown-urgent-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.animate-kid-warning {
+  animation: kid-pulse-warning 0.9s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-countdown-urgent {
+  animation: countdown-urgent-bounce 0.9s ease-in-out infinite;
+}

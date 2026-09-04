@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ReceiptTextIcon, ShieldAlertIcon } from "lucide-react";
+import { ShieldAlertIcon } from "lucide-react";
 
 import { AdminFinancialReportView } from "@/components/admin-financial-report-view";
 import { AdminSidebar } from "@/components/admin-sidebar";

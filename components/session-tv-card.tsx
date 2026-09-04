@@ -94,7 +94,8 @@ export function SessionTvCard({
 	const totalMs = Math.max(1, endsAt - startedAt);
 	const remainingMs = endsAt - now;
 	const isFinished = session.estado !== "ACTIVA" || remainingMs <= 0;
-	const isAlmostDone = !isFinished && remainingMs <= 10 * 60_000;
+	const isLast10Seconds = !isFinished && remainingMs > 0 && remainingMs <= 10_000;
+	const isAlmostDone = !isFinished && !isLast10Seconds && remainingMs <= 10 * 60_000;
 	const progress = Math.min(100, Math.max(0, ((now - startedAt) / totalMs) * 100));
 
 	const gender = detectGender(session.clienteNombre);
@@ -109,19 +110,25 @@ export function SessionTvCard({
 	return (
 		<div
 			className={cn(
-				"relative flex flex-col justify-between overflow-hidden rounded-3xl p-5 sm:p-6 text-white transition-all shadow-xl",
-				isFinished && "opacity-85 grayscale-[0.3]"
+				"relative flex flex-col justify-between h-full overflow-hidden rounded-3xl p-5 sm:p-6 text-white transition-all shadow-xl",
+				isFinished && "opacity-85 grayscale-[0.3]",
+				isLast10Seconds && "animate-kid-warning z-20 ring-4 ring-white/70"
 			)}
 			style={{
 				background: isFinished
 					? "linear-gradient(135deg, #2D1515 0%, #1A0B0B 100%)"
 					: palette.bg,
+				filter: isLast10Seconds ? "brightness(1.12) saturate(1.25)" : undefined,
 				boxShadow: isFinished
 					? "0 10px 30px rgba(239, 68, 68, 0.2)"
-					: `0 12px 35px ${palette.glow}`,
+					: isLast10Seconds
+						? `0 0 45px ${palette.glow}, 0 0 25px rgba(255, 255, 255, 0.7), 0 15px 35px rgba(0, 0, 0, 0.3)`
+						: `0 12px 35px ${palette.glow}`,
 				border: isFinished
 					? "2px solid rgba(239, 68, 68, 0.3)"
-					: "2px solid rgba(255, 255, 255, 0.2)",
+					: isLast10Seconds
+						? "3px solid rgba(255, 255, 255, 0.9)"
+						: "2px solid rgba(255, 255, 255, 0.2)",
 			}}
 		>
 			{/* ── Patrón decorativo de fondo para niños ── */}
@@ -135,53 +142,82 @@ export function SessionTvCard({
 
 			{/* ── Círculos difuminados de color ── */}
 			<div
-				className="pointer-events-none absolute -right-12 -top-12 size-36 rounded-full blur-2xl opacity-30"
-				style={{ background: palette.accent }}
+				className={cn(
+					"pointer-events-none absolute -right-12 -top-12 size-36 rounded-full blur-2xl opacity-30 transition-all",
+					isLast10Seconds && "size-48 opacity-70 bg-white/40 animate-pulse"
+				)}
+				style={{ background: isLast10Seconds ? "rgba(255, 255, 255, 0.6)" : palette.accent }}
 			/>
 
-			{/* ── Top Header: Plan + Badge de Estado ── */}
-			<div className="relative z-10 flex items-center justify-between gap-2">
-				<div className="flex items-center gap-2">
+			{/* ── Top Header: Plan + Horario + Badge de Estado ── */}
+			<div className="relative z-10 flex items-center justify-between gap-2 min-w-0">
+				<div className="flex items-center gap-2 min-w-0 flex-1">
 					<span
-						className="rounded-xl px-3 py-1 text-xs font-black uppercase tracking-wider shadow-sm"
+						className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-black uppercase tracking-wider shadow-sm shrink min-w-0"
 						style={{
-							background: "rgba(0, 0, 0, 0.25)",
+							background: "rgba(0, 0, 0, 0.28)",
 							backdropFilter: "blur(8px)",
 						}}
+						title={session.planNombre}
 					>
-						🎮 {session.planNombre}
+						<span className="shrink-0">🎮</span>
+						<span className="truncate max-w-[80px] sm:max-w-[110px] md:max-w-[130px]">
+							{session.planNombre}
+						</span>
 					</span>
-					<span className="text-xs font-semibold opacity-90">
+					<span className="text-[11px] sm:text-xs font-semibold opacity-90 whitespace-nowrap shrink-0">
 						Termina: {formatTime(endsAt)}
 					</span>
 				</div>
 
 				<span
+					suppressHydrationWarning
 					className={cn(
-						"rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider shadow-sm",
+						"rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-wider shadow-sm transition-all whitespace-nowrap shrink-0",
 						isFinished
 							? "bg-red-500/80 text-white"
-							: isAlmostDone
-								? "bg-amber-400 text-neutral-900 animate-pulse font-black"
-								: "bg-white/25 text-white"
+							: isLast10Seconds
+								? "bg-amber-300 text-neutral-950 font-black animate-pulse shadow-md scale-105"
+								: isAlmostDone
+									? "bg-amber-400 text-neutral-900 animate-pulse font-black"
+									: "bg-white/25 text-white"
 					)}
 					style={{ backdropFilter: "blur(8px)" }}
 				>
-					{isFinished ? "⚠️ Terminado" : isAlmostDone ? "⏳ Por terminar" : "✨ Jugando"}
+					{isFinished
+						? "⚠️ Terminado"
+						: isLast10Seconds
+							? "🚨 ¡ÚLTIMOS 10s!"
+							: isAlmostDone
+								? "⏳ Por terminar"
+								: "✨ Jugando"}
 				</span>
 			</div>
 
 			{/* ── Centro: Nombre del Niño + Ícono visual ── */}
 			<div className="relative z-10 my-4 flex items-center gap-4">
 				<div
-					className="flex size-14 sm:size-16 shrink-0 items-center justify-center rounded-2xl text-3xl sm:text-4xl shadow-md transition-transform hover:scale-105"
+					className={cn(
+						"flex size-14 sm:size-16 shrink-0 items-center justify-center rounded-2xl text-3xl sm:text-4xl shadow-md transition-all",
+						isLast10Seconds && "animate-bounce shadow-yellow-400/50 scale-110"
+					)}
 					style={{
-						background: "rgba(255, 255, 255, 0.22)",
+						background: isLast10Seconds
+							? "rgba(255, 255, 255, 0.35)"
+							: "rgba(255, 255, 255, 0.22)",
 						backdropFilter: "blur(12px)",
-						border: "2px solid rgba(255, 255, 255, 0.35)",
+						border: isLast10Seconds
+							? "3px solid #FFF066"
+							: "2px solid rgba(255, 255, 255, 0.35)",
 					}}
 				>
-					{isFinished ? "😴" : gender === "girl" ? "👧" : "👦"}
+					{isFinished
+						? "😴"
+						: isLast10Seconds
+							? "⏰"
+							: gender === "girl"
+								? "👧"
+								: "👦"}
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="text-xs font-bold uppercase tracking-widest text-white/80">
@@ -194,15 +230,27 @@ export function SessionTvCard({
 			</div>
 
 			{/* ── Contador digital grande estilo juego ── */}
-			<div className="relative z-10 rounded-2xl p-3 sm:p-4 text-center shadow-inner"
+			<div
+				suppressHydrationWarning
+				className={cn(
+					"relative z-10 rounded-2xl p-3 sm:p-4 text-center shadow-inner transition-all",
+					isLast10Seconds && "border-2 border-amber-300/90 bg-black/45 shadow-lg shadow-amber-500/40 animate-countdown-urgent"
+				)}
 				style={{
-					background: "rgba(0, 0, 0, 0.28)",
+					background: isLast10Seconds ? "rgba(0, 0, 0, 0.45)" : "rgba(0, 0, 0, 0.28)",
 					backdropFilter: "blur(10px)",
-					border: "1px solid rgba(255, 255, 255, 0.15)",
+					border: isLast10Seconds ? "2px solid #FFD600" : "1px solid rgba(255, 255, 255, 0.15)",
 				}}
 			>
-				<p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-white/75 mb-1.5">
-					{isFinished ? "Sesión finalizada" : "Tiempo restante"}
+				<p className={cn(
+					"text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] mb-1.5 transition-colors",
+					isLast10Seconds ? "text-amber-300 animate-pulse font-black" : "text-white/75"
+				)}>
+					{isFinished
+						? "Sesión finalizada"
+						: isLast10Seconds
+							? "⚡ ¡TIEMPO POR TERMINAR! ⚡"
+							: "Tiempo restante"}
 				</p>
 				
 				{isFinished ? (
@@ -212,24 +260,38 @@ export function SessionTvCard({
 				) : (
 					<div className="flex items-center justify-center gap-1.5 sm:gap-2 font-mono">
 						<div className="flex flex-col items-center">
-							<span className="text-2xl sm:text-4xl font-black tabular-nums drop-shadow text-white">
+							<span className={cn(
+								"text-2xl sm:text-4xl font-black tabular-nums drop-shadow text-white",
+								isLast10Seconds && "text-amber-200"
+							)}>
 								{time.h}
 							</span>
 							<span className="text-[9px] uppercase font-bold text-white/60">hrs</span>
 						</div>
 						<span className="text-2xl sm:text-3xl font-black text-white/60 -mt-3">:</span>
 						<div className="flex flex-col items-center">
-							<span className="text-2xl sm:text-4xl font-black tabular-nums drop-shadow text-white">
+							<span className={cn(
+								"text-2xl sm:text-4xl font-black tabular-nums drop-shadow text-white",
+								isLast10Seconds && "text-amber-200"
+							)}>
 								{time.m}
 							</span>
 							<span className="text-[9px] uppercase font-bold text-white/60">min</span>
 						</div>
 						<span className="text-2xl sm:text-3xl font-black text-white/60 -mt-3">:</span>
 						<div className="flex flex-col items-center">
-							<span className="text-2xl sm:text-4xl font-black tabular-nums drop-shadow text-white">
+							<span className={cn(
+								"text-2xl sm:text-4xl font-black tabular-nums drop-shadow text-white",
+								isLast10Seconds && "text-yellow-300 text-3xl sm:text-5xl drop-shadow-[0_0_12px_rgba(255,215,0,0.9)] animate-pulse"
+							)}>
 								{time.s}
 							</span>
-							<span className="text-[9px] uppercase font-bold text-white/60">seg</span>
+							<span className={cn(
+								"text-[9px] uppercase font-bold",
+								isLast10Seconds ? "text-yellow-300 font-black" : "text-white/60"
+							)}>
+								seg
+							</span>
 						</div>
 					</div>
 				)}
@@ -242,19 +304,24 @@ export function SessionTvCard({
 					style={{ background: "rgba(0, 0, 0, 0.3)" }}
 				>
 					<div
+						suppressHydrationWarning
 						className="h-full rounded-full transition-all duration-700"
 						style={{
 							width: `${isFinished ? 100 : Math.min(100, Math.max(0, progress))}%`,
 							background: isFinished
 								? "#EF4444"
-								: isAlmostDone
-									? "#FBBF24"
-									: "#FFFFFF",
-							boxShadow: "0 0 10px rgba(255, 255, 255, 0.8)",
+								: isLast10Seconds
+									? "#FFD600"
+									: isAlmostDone
+										? "#FBBF24"
+										: "#FFFFFF",
+							boxShadow: isLast10Seconds
+								? "0 0 15px rgba(255, 214, 0, 1)"
+								: "0 0 10px rgba(255, 255, 255, 0.8)",
 						}}
 					/>
 				</div>
-				<div className="flex justify-between text-[11px] font-bold text-white/80 px-0.5">
+				<div suppressHydrationWarning className="flex justify-between text-[11px] font-bold text-white/80 px-0.5">
 					<span>{Math.round(progress)}% completado</span>
 					<span>{session.minutosTotales} min totales</span>
 				</div>

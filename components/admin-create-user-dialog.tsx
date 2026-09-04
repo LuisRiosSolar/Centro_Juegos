@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { PlusIcon, UserPlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,6 +25,13 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 export function AdminCreateUserDialog() {
 	const router = useRouter();
@@ -38,6 +45,8 @@ export function AdminCreateUserDialog() {
 		register,
 		handleSubmit,
 		reset,
+		control,
+		setValue,
 		formState: { errors, isSubmitting },
 	} = useForm<CreateManagedUserValues>({
 		defaultValues: {
@@ -47,6 +56,8 @@ export function AdminCreateUserDialog() {
 			role: "admin",
 		},
 	});
+
+	const selectedRole = useWatch({ control, name: "role" });
 
 	async function onSubmit(values: CreateManagedUserValues) {
 		setStatus(null);
@@ -141,14 +152,33 @@ export function AdminCreateUserDialog() {
 
 						<Field data-invalid={!!errors.role}>
 							<FieldLabel htmlFor="dlg-role">Rol asignado</FieldLabel>
-							<select
-								id="dlg-role"
-								className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-								{...register("role")}
+							<Select
+								value={selectedRole}
+								onValueChange={(val) => {
+									if (val) setValue("role", val as "admin" | "superadmin", { shouldValidate: true });
+								}}
 							>
-								<option value="admin">Administrador (Acceso limitado)</option>
-								<option value="superadmin">Super Administrador (Acceso total)</option>
-							</select>
+								<SelectTrigger
+									id="dlg-role"
+									className="!h-10 !w-full rounded-xl bg-card border-border/80 px-3 flex items-center justify-between text-sm shadow-2xs hover:border-primary/50 transition-all"
+								>
+									<SelectValue>
+										{(val) =>
+											val === "superadmin"
+												? "Super Administrador"
+												: "Administrador"
+										}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent className="rounded-xl">
+									<SelectItem value="admin" className="rounded-lg text-sm">
+										Administrador
+									</SelectItem>
+									<SelectItem value="superadmin" className="rounded-lg text-sm">
+										Super Administrador
+									</SelectItem>
+								</SelectContent>
+							</Select>
 							<FieldError errors={[errors.role]} />
 						</Field>
 
@@ -156,15 +186,20 @@ export function AdminCreateUserDialog() {
 							Los administradores pueden gestionar turnos y tiempos sin acceso a configuración de planes ni finanzas globales.
 						</FieldDescription>
 
-						<div className="flex items-center justify-end gap-2 pt-2">
+						<div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border/60">
 							<Button
 								type="button"
 								variant="outline"
 								onClick={() => setOpen(false)}
+								className="h-10 rounded-xl px-5 text-xs font-semibold border-border/80 hover:bg-muted/60"
 							>
 								Cancelar
 							</Button>
-							<Button type="submit" disabled={isSubmitting}>
+							<Button
+								type="submit"
+								disabled={isSubmitting}
+								className="h-10 rounded-xl px-6 text-xs font-bold shadow-sm"
+							>
 								{isSubmitting ? "Creando..." : "Crear usuario"}
 							</Button>
 						</div>

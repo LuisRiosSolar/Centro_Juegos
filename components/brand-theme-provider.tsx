@@ -328,15 +328,25 @@ export function BrandThemeProvider({
 }: {
 	children: React.ReactNode;
 }) {
-	const [theme, setTheme] = useState<BrandTheme>(DEFAULT_THEME);
+	const [theme, setTheme] = useState<BrandTheme>(() => {
+		if (typeof window === "undefined") return DEFAULT_THEME;
+		try {
+			const saved = localStorage.getItem(STORAGE_KEY);
+			if (saved) {
+				return JSON.parse(saved);
+			}
+		} catch {
+			// Ignorar errores de localStorage
+		}
+		return DEFAULT_THEME;
+	});
 
-	// Cargar tema guardado al montar
+	// Sincronizar colores del tema en el DOM al montar
 	useEffect(() => {
 		try {
 			const saved = localStorage.getItem(STORAGE_KEY);
 			if (saved) {
 				const parsed: BrandTheme = JSON.parse(saved);
-				setTheme(parsed);
 				applyColorsToRoot(parsed.colors);
 			}
 		} catch {

@@ -92,8 +92,8 @@ export function AdminCreatePlanDialog() {
 							</p>
 						) : null}
 						<Field data-invalid={!!errors.nombre}>
-							<FieldLabel htmlFor="nombre">Nombre</FieldLabel>
-							<Input id="nombre" {...register("nombre")} />
+							<FieldLabel htmlFor="nombre">Nombre (máx. 20 caracteres)</FieldLabel>
+							<Input id="nombre" maxLength={20} placeholder="Ej: LITE, FULL, VIP..." {...register("nombre")} />
 							<FieldError errors={[errors.nombre]} />
 						</Field>
 						<Field data-invalid={!!errors.minutos}>

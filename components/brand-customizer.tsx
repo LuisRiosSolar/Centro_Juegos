@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
 	DEFAULT_THEME,
-	PRESET_THEMES,
 	useBrandTheme,
 	type BrandTheme,
 	type BrandThemeColors,
