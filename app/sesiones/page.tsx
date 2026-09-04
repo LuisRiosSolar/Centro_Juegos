@@ -62,6 +62,7 @@ export default async function SessionsPage() {
 						{adminAccess.ok ? (
 							<Button
 								size="default"
+								nativeButton={false}
 								render={<Link href="/admin" />}
 								className="gap-2 font-bold shadow-lg"
 							>
