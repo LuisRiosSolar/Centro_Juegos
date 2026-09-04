@@ -75,7 +75,7 @@ export default async function AdminPage() {
 							<div className="flex items-center gap-3">
 								<SidebarTrigger />
 								<div>
-									<p className="text-sm text-muted-foreground">Panel admin</p>
+									<p className="text-sm text-muted-foreground">Panel Administrativo</p>
 									<h1 className="text-3xl font-semibold tracking-tight">
 										Sesiones de juego
 									</h1>

@@ -92,7 +92,10 @@ export default async function AdminUsersPage() {
 						</header>
 
 						<div className="w-full">
-							<AdminUsersListView users={existingUsers} />
+							<AdminUsersListView
+								users={existingUsers}
+								currentUserId={access.userId}
+							/>
 						</div>
 					</div>
 				</main>

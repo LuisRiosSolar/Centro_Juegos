@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Clock, Phone, PlusCircleIcon, UserRound, Sparkles } from "lucide-react";
+import { Clock, Phone, PlusCircleIcon, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { adjustSessionTime, finishGameSession } from "@/app/admin/actions";
@@ -67,7 +67,20 @@ export function detectGender(name: string): "boy" | "girl" {
 export function getPlanDynamicOptions(planMinutos: number = 30): number[] {
 	const base = Math.max(1, planMinutos);
 	const half = Math.max(1, Math.round(base * 0.5));
-	return [half, base, base * 2, base * 3];
+	const rawOptions = [half, base, base * 2, base * 3];
+	const uniqueOptions = Array.from(new Set(rawOptions)).filter((m) => m > 0);
+
+	if (uniqueOptions.length < 4) {
+		const fallbackIncrements = [1, 2, 5, 10, 15, 30];
+		for (const inc of fallbackIncrements) {
+			if (!uniqueOptions.includes(inc)) {
+				uniqueOptions.push(inc);
+			}
+			if (uniqueOptions.length === 4) break;
+		}
+	}
+
+	return uniqueOptions.sort((a, b) => a - b);
 }
 
 export function SessionCountdownCard({
@@ -143,52 +156,55 @@ export function SessionCountdownCard({
 			)}
 		>
 			<CardContent className={cn("p-4 sm:p-5", compact && "p-3 sm:p-4")}>
-				<div className={cn("flex flex-col gap-4", compact && "gap-3")}>
-					{/* ── Header: Estado + Info Jugador + Contador ── */}
-					<div
-						className={cn(
-							"flex flex-col gap-3 md:flex-row md:items-start md:justify-between",
-							compact && "md:flex-col",
-						)}
-					>
-						<div className="space-y-2.5 flex-1 min-w-0">
-							{/* Badges de estado */}
-							<div className="flex flex-wrap items-center gap-2">
-								<span
-									className={cn(
-										"rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide shadow-xs",
-										isCancelled
-											? "bg-rose-600 text-white"
-											: isDbFinalized
-												? "bg-muted text-muted-foreground border border-border"
-												: isTimeOver
-													? "bg-amber-500 text-amber-950 font-black"
-													: isAlmostDone
-														? "bg-primary text-primary-foreground animate-pulse"
-														: "bg-emerald-600 text-white",
-									)}
-								>
-									{isCancelled
-										? "CANCELADA"
+				<div className={cn("flex flex-col gap-3", compact && "gap-2.5")}>
+					{/* ── Top Bar: Estado + Horario + Plan ── */}
+					<div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+						<div className="flex flex-wrap items-center gap-2">
+							<span
+								suppressHydrationWarning
+								className={cn(
+									"rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide shadow-2xs",
+									isCancelled
+										? "bg-rose-600 text-white"
 										: isDbFinalized
-											? "FINALIZADA"
+											? "bg-muted text-muted-foreground border border-border"
 											: isTimeOver
-												? "TIEMPO TERMINADO"
+												? "bg-amber-500 text-amber-950 font-black"
 												: isAlmostDone
-													? "POR TERMINAR"
-													: "ACTIVA"}
-								</span>
-								<span className="text-[11px] text-muted-foreground font-medium">
-									{isFinished && session.fechaSalida
-										? `Salida: ${formatDateTime(session.fechaSalida)}`
-										: `Inicio: ${formatDateTime(session.fechaIngreso)}`}
-								</span>
-							</div>
+													? "bg-primary text-primary-foreground animate-pulse"
+													: "bg-emerald-600 text-white",
+								)}
+							>
+								{isCancelled
+									? "CANCELADA"
+									: isDbFinalized
+										? "FINALIZADA"
+										: isTimeOver
+											? "TIEMPO TERMINADO"
+											: isAlmostDone
+												? "POR TERMINAR"
+												: "ACTIVA"}
+							</span>
+							<span className="text-[11px] text-muted-foreground font-medium">
+								{isFinished && session.fechaSalida
+									? `Salida: ${formatDateTime(session.fechaSalida)}`
+									: `Inicio: ${formatDateTime(session.fechaIngreso)}`}
+							</span>
+						</div>
 
-							{/* Nombre del niño/niña con ícono visual */}
+						<span className="rounded-lg bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-bold text-primary">
+							🎮 {session.planNombre}
+						</span>
+					</div>
+
+					{/* ── Centro: Datos del Jugador y Acudiente (Izquierda) + Contador (Derecha) ── */}
+					<div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-stretch">
+						{/* Columna Izquierda: Jugador + Acudiente */}
+						<div className="sm:col-span-7 flex flex-col justify-between gap-2.5 min-w-0">
+							{/* Nombre e Ícono del Jugador */}
 							<div className="flex items-center gap-3">
 								<div
-									className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-inner"
+									className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-inner transition-transform"
 									style={{
 										background: isFinished
 											? "rgba(239, 68, 68, 0.15)"
@@ -204,43 +220,47 @@ export function SessionCountdownCard({
 								>
 									{isCancelled ? "🚫" : isFinished ? "⏱️" : gender === "girl" ? "👧" : "👦"}
 								</div>
-								<div className="min-w-0">
-									<h3
-										className={cn(
-											"truncate font-extrabold tracking-tight text-foreground",
-											compact ? "text-lg" : "text-xl",
-										)}
-									>
+								<div className="min-w-0 flex-1">
+									<p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+										Jugador(a)
+									</p>
+									<h3 className="truncate text-lg sm:text-xl font-extrabold tracking-tight text-foreground leading-tight">
 										{session.clienteNombre}
 									</h3>
-									<p className="text-xs text-muted-foreground">
+									<p className="text-xs text-muted-foreground font-mono">
 										ID: {session.clienteIdentificacion}
 									</p>
 								</div>
 							</div>
 
-							{/* Datos del Acudiente / Responsable (visible en el inicio admin) */}
-							<div className="flex flex-wrap gap-2 pt-0.5">
-								<div className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
-									<UserRound className="size-3.5 text-primary shrink-0" />
-									<span className="truncate max-w-[130px] font-medium text-foreground">
+							{/* Tarjeta del Responsable / Acudiente */}
+							<div className="rounded-xl border border-border/70 bg-muted/30 p-2.5 space-y-1 text-xs">
+								<div className="flex items-center justify-between gap-2">
+									<span className="flex items-center gap-1.5 text-muted-foreground font-medium shrink-0">
+										<UserRound className="size-3.5 text-primary" />
+										Acudiente:
+									</span>
+									<span className="font-bold text-foreground truncate text-right">
 										{session.responsableNombre}
 									</span>
 								</div>
-								<div className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
-									<Phone className="size-3.5 text-primary shrink-0" />
-									<span className="font-medium text-foreground">
+								<div className="flex items-center justify-between gap-2 border-t border-border/40 pt-1">
+									<span className="flex items-center gap-1.5 text-muted-foreground font-medium shrink-0">
+										<Phone className="size-3.5 text-primary" />
+										Teléfono:
+									</span>
+									<span className="font-bold text-foreground font-mono text-right">
 										{session.responsableTelefono}
 									</span>
 								</div>
 							</div>
 						</div>
 
-						{/* Caja de Contador / Cuenta Regresiva */}
+						{/* Columna Derecha: Caja de Contador / Tiempo */}
 						<div
+							suppressHydrationWarning
 							className={cn(
-								"shrink-0 rounded-2xl border p-3 text-center transition-all",
-								!compact && "md:min-w-[190px]",
+								"sm:col-span-5 flex flex-col justify-center items-center rounded-2xl border p-3 text-center transition-all min-h-[110px]",
 								isCancelled
 									? "border-rose-500/30 bg-rose-500/10"
 									: isDbFinalized
@@ -248,12 +268,12 @@ export function SessionCountdownCard({
 										: isTimeOver
 											? "border-amber-500/40 bg-amber-500/10"
 											: isAlmostDone
-												? "border-primary/40 bg-primary/10 shadow-sm shadow-primary/10"
-												: "border-border/80 bg-muted/20"
+												? "border-primary/40 bg-primary/10 shadow-xs shadow-primary/10"
+												: "border-border/80 bg-muted/25"
 							)}
 						>
-							<p className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-								<Clock className="size-3 text-primary" />
+							<p className="flex items-center justify-center gap-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+								<Clock className="size-3 text-primary shrink-0" />
 								{isCancelled
 									? "Cancelada"
 									: isDbFinalized
@@ -263,6 +283,7 @@ export function SessionCountdownCard({
 											: "Tiempo restante"}
 							</p>
 							<p
+								suppressHydrationWarning
 								className={cn(
 									"mt-1 font-mono text-2xl sm:text-3xl font-black tracking-tight tabular-nums",
 									isCancelled
@@ -280,9 +301,9 @@ export function SessionCountdownCard({
 									? "00:00:00"
 									: formatRemaining(remainingMs)}
 							</p>
-							<p className="mt-0.5 text-[11px] text-muted-foreground font-medium">
+							<p className="mt-0.5 text-[10px] sm:text-[11px] text-muted-foreground font-medium truncate">
 								{isFinished && session.fechaSalida
-									? `Salida: ${formatDateTime(session.fechaSalida)}`
+									? `Salida: ${formatTime(new Date(session.fechaSalida).getTime())}`
 									: `Termina: ${formatTime(endsAt)}`}
 							</p>
 						</div>
@@ -292,6 +313,7 @@ export function SessionCountdownCard({
 					<div className="space-y-3">
 						<div className="h-2.5 w-full overflow-hidden rounded-full bg-muted/60 border border-border/40">
 							<div
+								suppressHydrationWarning
 								className={cn(
 									"h-full rounded-full transition-all duration-500",
 									isCancelled
@@ -325,13 +347,13 @@ export function SessionCountdownCard({
 									</div>
 
 									<div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-										{dynamicAddOptions.map((minutes) => {
+										{dynamicAddOptions.map((minutes, idx) => {
 											const cost = Math.round(
 												(planPrice / planMinutes) * minutes,
 											);
 											return (
 												<Button
-													key={minutes}
+													key={`${session.id}-add-${minutes}-${idx}`}
 													variant="outline"
 													size="sm"
 													type="button"

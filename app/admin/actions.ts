@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
+import { hashPassword } from "better-auth/crypto";
 
 import { db } from "@/db";
 import {
+	account,
 	cliente,
 	extensionTiempo,
 	pago,
@@ -12,13 +14,16 @@ import {
 	responsable,
 	rol,
 	sesionJuego,
+	session,
 	user,
 } from "@/db/schema";
 import { getAdminAccess } from "@/lib/admin-auth";
 import {
 	createManagedUserSchema,
+	updateManagedUserSchema,
 	type ActionResult,
 	type CreateManagedUserValues,
+	type UpdateManagedUserValues,
 } from "@/lib/auth-schemas";
 import {
 	createPlanSchema,
@@ -134,6 +139,220 @@ export async function createManagedUser(
 			ok: false,
 			message: errorMsg,
 		};
+	}
+}
+
+export async function updateManagedUser(
+	values: UpdateManagedUserValues,
+): Promise<ActionResult> {
+	const access = await getAdminAccess();
+
+	if (!access.ok) {
+		return {
+			ok: false,
+			message:
+				access.reason === "unauthenticated"
+					? "Debes iniciar sesión."
+					: "No tienes permisos para editar usuarios.",
+		};
+	}
+
+	if (!access.isRoot) {
+		return {
+			ok: false,
+			message: "Solo el super administrador puede editar usuarios.",
+		};
+	}
+
+	const parsed = updateManagedUserSchema.safeParse(values);
+	if (!parsed.success) {
+		return {
+			ok: false,
+			message: parsed.error.issues[0]?.message ?? "Datos inválidos.",
+		};
+	}
+
+	const { userId, name, email, role, newPassword } = parsed.data;
+	const normalizedEmail = email.toLowerCase().trim();
+
+	const [existing] = await db
+		.select({ id: user.id, email: user.email })
+		.from(user)
+		.where(eq(user.id, userId))
+		.limit(1);
+
+	if (!existing) {
+		return { ok: false, message: "Usuario no encontrado." };
+	}
+
+	// Si cambió el correo, verificar que no esté ocupado por otro usuario
+	if (normalizedEmail !== existing.email.toLowerCase()) {
+		const [emailConflict] = await db
+			.select({ id: user.id })
+			.from(user)
+			.where(eq(user.email, normalizedEmail))
+			.limit(1);
+
+		if (emailConflict && emailConflict.id !== userId) {
+			return {
+				ok: false,
+				message: "Ya existe otro usuario con ese correo electrónico.",
+			};
+		}
+	}
+
+	// Buscar o crear rol
+	const targetRoleName = role.toUpperCase();
+	let [roleRecord] = await db
+		.select({ id: rol.id })
+		.from(rol)
+		.where(ilike(rol.nombre, targetRoleName))
+		.limit(1);
+
+	if (!roleRecord) {
+		const newRoleId = crypto.randomUUID();
+		await db.insert(rol).values({
+			id: newRoleId,
+			nombre: targetRoleName,
+			descripcion:
+				targetRoleName === "SUPERADMIN"
+					? "Super Administrador"
+					: "Administrador",
+		});
+		roleRecord = { id: newRoleId };
+	}
+
+	try {
+		// Actualizar datos del usuario
+		await db
+			.update(user)
+			.set({
+				name: name.trim(),
+				email: normalizedEmail,
+				roleId: roleRecord.id,
+			})
+			.where(eq(user.id, userId));
+
+		// Si se suministró una nueva contraseña, actualizarla con hash
+		if (newPassword && newPassword.trim().length >= 8) {
+			const hashedPassword = await hashPassword(newPassword.trim());
+
+			const [existingAccount] = await db
+				.select({ id: account.id })
+				.from(account)
+				.where(
+					and(
+						eq(account.userId, userId),
+						eq(account.providerId, "credential"),
+					),
+				)
+				.limit(1);
+
+			if (existingAccount) {
+				await db
+					.update(account)
+					.set({ password: hashedPassword })
+					.where(eq(account.id, existingAccount.id));
+			} else {
+				await db.insert(account).values({
+					id: crypto.randomUUID(),
+					userId,
+					providerId: "credential",
+					issuer: "credential",
+					accountId: userId,
+					password: hashedPassword,
+				});
+			}
+
+			// Invalida sesiones activas para exigir nuevo inicio de sesión
+			await db.delete(session).where(eq(session.userId, userId));
+		}
+
+		revalidateAdminViews();
+		return {
+			ok: true,
+			message: `Usuario ${name.trim()} actualizado correctamente.${newPassword ? " Contraseña actualizada." : ""}`,
+		};
+	} catch (error) {
+		const errorMsg =
+			error instanceof Error
+				? error.message
+				: "Error al actualizar usuario";
+		return { ok: false, message: errorMsg };
+	}
+}
+
+export async function deleteManagedUser(
+	targetUserId: string,
+): Promise<ActionResult> {
+	const access = await getAdminAccess();
+
+	if (!access.ok) {
+		return {
+			ok: false,
+			message:
+				access.reason === "unauthenticated"
+					? "Debes iniciar sesión."
+					: "No tienes permisos para eliminar usuarios.",
+		};
+	}
+
+	if (!access.isRoot) {
+		return {
+			ok: false,
+			message: "Solo el super administrador puede eliminar usuarios.",
+		};
+	}
+
+	if (targetUserId === access.userId) {
+		return {
+			ok: false,
+			message: "No puedes eliminar tu propia cuenta activa de super administrador.",
+		};
+	}
+
+	const [existing] = await db
+		.select({ id: user.id, name: user.name })
+		.from(user)
+		.where(eq(user.id, targetUserId))
+		.limit(1);
+
+	if (!existing) {
+		return { ok: false, message: "Usuario no encontrado." };
+	}
+
+	try {
+		// Reasignar sesiones creadas y pagos al superadministrador actual para no violar constraints de BD
+		await db
+			.update(sesionJuego)
+			.set({ creadoPor: access.userId })
+			.where(eq(sesionJuego.creadoPor, targetUserId));
+
+		await db
+			.update(pago)
+			.set({ creadoPor: access.userId })
+			.where(eq(pago.creadoPor, targetUserId));
+
+		await db
+			.update(extensionTiempo)
+			.set({ creadoPor: access.userId })
+			.where(eq(extensionTiempo.creadoPor, targetUserId));
+
+		// Eliminar cuentas y sesiones asociadas
+		await db.delete(account).where(eq(account.userId, targetUserId));
+		await db.delete(session).where(eq(session.userId, targetUserId));
+		await db.delete(user).where(eq(user.id, targetUserId));
+
+		revalidateAdminViews();
+
+		return {
+			ok: true,
+			message: `Usuario "${existing.name}" eliminado correctamente.`,
+		};
+	} catch (error) {
+		const errorMsg =
+			error instanceof Error ? error.message : "Error al eliminar usuario.";
+		return { ok: false, message: errorMsg };
 	}
 }
 

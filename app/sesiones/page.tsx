@@ -62,6 +62,7 @@ export default async function SessionsPage() {
 						{adminAccess.ok ? (
 							<Button
 								size="default"
+								nativeButton={false}
 								render={<Link href="/admin" />}
 								className="gap-2 font-bold shadow-lg"
 							>
@@ -86,7 +87,7 @@ export default async function SessionsPage() {
 						</CardContent>
 					</Card>
 				) : (
-					<section className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
+					<section className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-stretch">
 						{activeSessions.map((activeSession, idx) => (
 							<SessionTvCard
 								key={activeSession.id}
